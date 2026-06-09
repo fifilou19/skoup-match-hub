@@ -39,12 +39,16 @@ export function BottomNav({ active = "matches" }: { active?: BottomNavKey }) {
   const navigate = useNavigate();
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-around"
+      className="fixed z-40 flex items-center justify-around"
       style={{
+        left: 12,
+        right: 12,
+        bottom: "calc(env(safe-area-inset-bottom, 0px) + 12px)",
         backgroundColor: "#1E293B",
-        borderTop: "0.5px solid #1E3A5F",
+        border: "0.5px solid #1E3A5F",
+        borderRadius: 16,
         paddingTop: 8,
-        paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 8px)",
+        paddingBottom: 8,
       }}
     >
       {items.map((it) => {
@@ -58,7 +62,7 @@ export function BottomNav({ active = "matches" }: { active?: BottomNavKey }) {
             onClick={() => navigate({ to: it.to })}
             className="flex flex-1 items-center justify-center py-1"
           >
-            <Icon size={24} color={isActive ? "#E8622A" : "#64748B"} />
+            <Icon size={28} color={isActive ? "#E8622A" : "#64748B"} />
           </button>
         );
       })}
