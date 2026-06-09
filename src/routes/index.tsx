@@ -55,7 +55,7 @@ function MatchesPage() {
     const byLeague = new Map<number, CompetitionGroup>();
     for (const dto of data.matches) {
       if (!ALLOWED_LEAGUE_IDS.has(dto.leagueId)) continue;
-      if (isFinishedStatus(dto.status) || isLiveStatus(dto.status)) continue;
+      if (day === "today" && (isFinishedStatus(dto.status) || isLiveStatus(dto.status))) continue;
       const key = dto.leagueId;
       if (!byLeague.has(key)) {
         byLeague.set(key, {
