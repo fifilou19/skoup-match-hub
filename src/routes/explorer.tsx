@@ -270,7 +270,7 @@ function Suggestions({
   );
 }
 
-function TeamResults({ team, onBack }: { team: DtoTeamSearch; onBack: () => void }) {
+function TeamResults({ team, onBack, onSearchOtherTeam }: { team: DtoTeamSearch; onBack: () => void; onSearchOtherTeam: () => void }) {
   const fetchNext = useServerFn(getTeamNextFixtures);
   const { data, isLoading, isError } = useQuery({
     queryKey: ["teamNext", team.id],
@@ -280,7 +280,7 @@ function TeamResults({ team, onBack }: { team: DtoTeamSearch; onBack: () => void
   const matches = useMemo(() => (data?.matches ?? []).map(dtoToMatch), [data]);
 
   return (
-    <div className="min-h-screen font-sans text-[#E2E8F0]" style={{ backgroundColor: "#0F172A" }}>
+    <div className="flex min-h-screen flex-col font-sans text-[#E2E8F0]" style={{ backgroundColor: "#0F172A" }}>
       <header className="flex items-center gap-3 px-4 py-3">
         <button
           type="button"
