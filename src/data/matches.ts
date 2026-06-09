@@ -22,6 +22,7 @@ export interface Match {
   elapsed?: number | null;
   scoreHome?: number | null;
   scoreAway?: number | null;
+  kickoff?: string; // ISO date (pour formatage conditionnel dans l'Explorer)
 }
 
 export interface Competition {

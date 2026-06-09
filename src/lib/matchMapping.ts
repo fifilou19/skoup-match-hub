@@ -50,6 +50,7 @@ export function dtoToMatch(dto: DtoMatch): Match {
     elapsed: dto.elapsed,
     scoreHome: dto.goalsHome,
     scoreAway: dto.goalsAway,
+    kickoff: dto.kickoff,
   };
 }
 
