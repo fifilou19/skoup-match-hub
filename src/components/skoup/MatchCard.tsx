@@ -63,7 +63,7 @@ export function MatchCard({ match }: { match: Match }) {
       onClick={onCardClick}
       role="button"
       tabIndex={0}
-      className="flex cursor-pointer items-center active:opacity-80"
+      className="flex cursor-pointer active:opacity-80"
       style={{
         backgroundColor: "#1E293B",
         border: "0.5px solid #1E3A5F",
@@ -72,33 +72,36 @@ export function MatchCard({ match }: { match: Match }) {
         padding: "10px 12px",
       }}
     >
-      {/* Left: team logos */}
-      <div className="flex flex-col gap-[6px]">
-        <TeamLogo src={match.home.logo} name={match.home.name} size={28} rounded={4} />
-        <TeamLogo src={match.away.logo} name={match.away.name} size={28} rounded={4} />
-      </div>
-
-      {/* Center: names + meta */}
-      <div className="flex flex-1 flex-col pl-[10px]">
-        <span style={{ fontSize: 13, color: "#E2E8F0" }} className="font-medium leading-tight">
-          {match.home.name}
-        </span>
-        <span style={{ fontSize: 13, color: "#E2E8F0" }} className="font-medium leading-tight">
-          {match.away.name}
-        </span>
-        <span style={{ fontSize: 11, color: "#475569", marginTop: 4 }}>
+      {/* Left / Center: team rows + meta */}
+      <div className="flex flex-1 flex-col gap-[6px]">
+        {/* Home team row */}
+        <div className="flex items-center gap-[10px]">
+          <TeamLogo src={match.home.logo} name={match.home.name} size={28} rounded={4} />
+          <span style={{ fontSize: 13, color: "#E2E8F0" }} className="font-medium leading-tight">
+            {match.home.name}
+          </span>
+        </div>
+        {/* Away team row */}
+        <div className="flex items-center gap-[10px]">
+          <TeamLogo src={match.away.logo} name={match.away.name} size={28} rounded={4} />
+          <span style={{ fontSize: 13, color: "#E2E8F0" }} className="font-medium leading-tight">
+            {match.away.name}
+          </span>
+        </div>
+        {/* Time / venue */}
+        <span style={{ fontSize: 11, color: "#475569", marginTop: 2 }}>
           {match.time} · {match.venue}
         </span>
       </div>
 
-      {/* Right: badge + eye */}
-      <div className="flex flex-col items-end gap-2">
+      {/* Right: badge top, eye bottom */}
+      <div className="flex flex-col items-end">
         <ReliabilityBadge match={match} />
         <button
           type="button"
           onClick={onToggleWatch}
           aria-label={inWatchlist ? "Retirer de la watchlist" : "Ajouter à la watchlist"}
-          className="flex items-center justify-center transition-transform duration-150"
+          className="mt-auto flex items-center justify-center transition-transform duration-150"
           style={{
             width: 28,
             height: 28,
