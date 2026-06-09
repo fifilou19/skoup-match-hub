@@ -299,7 +299,7 @@ function TeamResults({ team, onBack, onSearchOtherTeam }: { team: DtoTeamSearch;
         </div>
       </header>
 
-      <main className="pb-24" style={{ marginTop: 12 }}>
+      <main className="flex flex-1 flex-col pb-24" style={{ marginTop: 12 }}>
         <h2
           style={{ fontSize: 12, color: "#475569", letterSpacing: "0.05em", margin: "0 16px 8px" }}
           className="uppercase"
