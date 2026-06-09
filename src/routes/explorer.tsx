@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Search, ChevronRight, ArrowLeft, X } from "lucide-react";
 import { BottomNav } from "@/components/skoup/BottomNav";
 import { TeamLogo } from "@/components/skoup/TeamLogo";
-import { MatchCard } from "@/components/skoup/MatchCard";
+import { ExplorerMatchCard } from "@/components/skoup/ExplorerMatchCard";
 import { searchTeams, getTeamNextFixtures, type DtoTeamSearch } from "@/lib/apiFootball.functions";
 import { dtoToMatch } from "@/lib/matchMapping";
 
@@ -312,7 +312,7 @@ function TeamResults({ team, onBack }: { team: DtoTeamSearch; onBack: () => void
           </p>
         )}
         {matches.map((m) => (
-          <MatchCard key={m.id} match={m} />
+          <ExplorerMatchCard key={m.id} match={m} />
         ))}
       </main>
 
