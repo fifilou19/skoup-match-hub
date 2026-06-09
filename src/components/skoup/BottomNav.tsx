@@ -28,7 +28,7 @@ function PitchIcon({ size = 24, color = "currentColor" }: IconProps) {
   );
 }
 
-const items: { key: BottomNavKey; icon: (p: IconProps) => React.ReactElement; label: string; to: string }[] = [
+const items: { key: BottomNavKey; icon: (p: IconProps) => ReactElement; label: string; to: string }[] = [
   { key: "matches", icon: PitchIcon, label: "Matchs", to: "/" },
   { key: "search", icon: (p) => <Search {...p} />, label: "Recherche", to: "/explorer" },
   { key: "bookmark", icon: (p) => <Bookmark {...p} />, label: "Favoris", to: "/" },
