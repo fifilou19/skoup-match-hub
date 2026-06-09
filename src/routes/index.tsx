@@ -1,29 +1,57 @@
+import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { TopBar } from "@/components/skoup/TopBar";
+import { DayToggle, type DayKey } from "@/components/skoup/DayToggle";
+import { CompetitionSelector } from "@/components/skoup/CompetitionSelector";
+import { CompetitionSection } from "@/components/skoup/CompetitionSection";
+import { BottomNav } from "@/components/skoup/BottomNav";
+import { matchesData, allCompetitions } from "@/data/matches";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Your App" },
-      { name: "description", content: "Replace this with a one-sentence description of your app." },
-      { property: "og:title", content: "Your App" },
-      { property: "og:description", content: "Replace this with a one-sentence description of your app." },
+      { title: "SKOUP — Matchs" },
+      { name: "description", content: "Suivez les matchs du jour et de demain sur SKOUP." },
+      { property: "og:title", content: "SKOUP — Matchs" },
+      {
+        property: "og:description",
+        content: "Suivez les matchs du jour et de demain sur SKOUP.",
+      },
     ],
   }),
-  component: Index,
+  component: MatchesPage,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
-function Index() {
+function MatchesPage() {
+  const [day, setDay] = useState<DayKey>("today");
+  const [competitionId, setCompetitionId] = useState<string>("all");
+
+  const filtered = useMemo(
+    () =>
+      competitionId === "all"
+        ? matchesData
+        : matchesData.filter((g) => g.competition.id === competitionId),
+    [competitionId],
+  );
+
   return (
     <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
+      className="min-h-screen font-sans text-[#E2E8F0]"
+      style={{ backgroundColor: "#0F172A" }}
     >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
+      <TopBar />
+      <DayToggle value={day} onChange={setDay} />
+      <CompetitionSelector
+        competitions={allCompetitions}
+        value={competitionId}
+        onChange={setCompetitionId}
       />
+      <main className="pb-24">
+        {filtered.map((g) => (
+          <CompetitionSection key={g.competition.id} group={g} />
+        ))}
+      </main>
+      <BottomNav />
     </div>
   );
 }
