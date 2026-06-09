@@ -202,10 +202,12 @@ function Suggestions({
   items,
   query,
   onSelect,
+  onRemove,
 }: {
   items: DtoTeamSearch[];
   query: string;
   onSelect: (t: DtoTeamSearch) => void;
+  onRemove?: (id: number) => void;
 }) {
   if (items.length === 0) {
     return (
@@ -225,22 +227,36 @@ function Suggestions({
       }}
     >
       {items.map((t, i) => (
-        <button
+        <div
           key={t.id}
-          type="button"
-          onClick={() => onSelect(t)}
-          className="flex w-full items-center gap-3 px-3 py-3 text-left active:bg-white/5"
+          className="flex w-full items-center gap-3 px-3 py-3"
           style={{ borderTop: i === 0 ? "none" : "0.5px solid #1E3A5F" }}
         >
-          <TeamLogo src={t.logo} name={t.name} size={32} rounded={6} />
-          <div className="flex flex-1 flex-col">
-            <span style={{ fontSize: 13, color: "#FFFFFF" }} className="font-bold">
-              {highlight(t.name, query)}
-            </span>
-            <span style={{ fontSize: 11, color: "#64748B" }}>{t.country}</span>
-          </div>
-          <ChevronRight size={16} color="#475569" />
-        </button>
+          <button
+            type="button"
+            onClick={() => onSelect(t)}
+            className="flex flex-1 items-center gap-3 text-left active:bg-white/5"
+          >
+            <TeamLogo src={t.logo} name={t.name} size={32} rounded={6} />
+            <div className="flex flex-1 flex-col">
+              <span style={{ fontSize: 13, color: "#FFFFFF" }} className="font-bold">
+                {highlight(t.name, query)}
+              </span>
+              <span style={{ fontSize: 11, color: "#64748B" }}>{t.country}</span>
+            </div>
+            <ChevronRight size={16} color="#475569" />
+          </button>
+          {onRemove && (
+            <button
+              type="button"
+              onClick={() => onRemove(t.id)}
+              className="flex items-center justify-center active:opacity-60"
+              style={{ padding: 4 }}
+            >
+              <X size={16} color="#475569" />
+            </button>
+          )}
+        </div>
       ))}
     </div>
   );
