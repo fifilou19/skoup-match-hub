@@ -138,7 +138,7 @@ function SettingsPage() {
               marginTop: 12,
             }}
           >
-            Passer à Premium — 1 990 FCFA / mois
+            Passer à Premium : 1 990 FCFA / mois
           </button>
         </section>
 
