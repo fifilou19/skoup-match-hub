@@ -145,17 +145,6 @@ export function MatchCard({ match }: { match: Match }) {
           <span style={{ fontSize: 13, color: "#E2E8F0" }} className="flex-1 font-medium leading-tight">
             {match.away.name}
           </span>
-          {match.isLive && match.scoreAway != null && (
-            <span
-              style={{
-                fontSize: 14,
-                color: awayLeading ? "#E8622A" : "#FFFFFF",
-              }}
-              className="font-bold tabular-nums"
-            >
-              {match.scoreAway}
-            </span>
-          )}
         </div>
         {/* Time / venue */}
         <span style={{ fontSize: 11, color: "#475569", marginTop: 2 }}>
