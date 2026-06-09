@@ -62,7 +62,10 @@ function MatchesPage() {
     if (!data?.matches?.length) return [];
     const byLeague = new Map<number, CompetitionGroup>();
     for (const dto of data.matches) {
-      if (day === "today" && (isFinishedStatus(dto.status) || isLiveStatus(dto.status))) continue;
+      if (day === "today") {
+        if (isFinishedStatus(dto.status) || isLiveStatus(dto.status)) continue;
+        if (new Date(dto.kickoff).getTime() <= Date.now()) continue;
+      }
 
       const key = dto.leagueId;
       if (!byLeague.has(key)) {
