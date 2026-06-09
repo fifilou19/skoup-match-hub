@@ -138,17 +138,6 @@ export function MatchCard({ match }: { match: Match }) {
           <span style={{ fontSize: 13, color: "#E2E8F0" }} className="flex-1 font-medium leading-tight">
             {match.home.name}
           </span>
-          {match.isLive && match.scoreHome != null && (
-            <span
-              style={{
-                fontSize: 14,
-                color: homeLeading ? "#E8622A" : "#FFFFFF",
-              }}
-              className="font-bold tabular-nums"
-            >
-              {match.scoreHome}
-            </span>
-          )}
         </div>
         {/* Away team row */}
         <div className="flex items-center gap-[10px]">
