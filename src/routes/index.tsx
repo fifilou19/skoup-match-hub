@@ -9,7 +9,7 @@ import { CompetitionSection } from "@/components/skoup/CompetitionSection";
 import { BottomNav } from "@/components/skoup/BottomNav";
 import { LEAGUES } from "@/lib/leagues";
 import { getFixtures } from "@/lib/apiFootball.functions";
-import { dateKey, dtoToMatch, isFinishedStatus } from "@/lib/matchMapping";
+import { dateKey, dtoToMatch, isFinishedStatus, isLiveStatus } from "@/lib/matchMapping";
 import type { CompetitionGroup } from "@/data/matches";
 
 
@@ -55,7 +55,7 @@ function MatchesPage() {
     const byLeague = new Map<number, CompetitionGroup>();
     for (const dto of data.matches) {
       if (!ALLOWED_LEAGUE_IDS.has(dto.leagueId)) continue;
-      if (isFinishedStatus(dto.status)) continue;
+      if (isFinishedStatus(dto.status) || isLiveStatus(dto.status)) continue;
       const key = dto.leagueId;
       if (!byLeague.has(key)) {
         byLeague.set(key, {
