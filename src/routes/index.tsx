@@ -1,15 +1,17 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { TopBar } from "@/components/skoup/TopBar";
 import { DayToggle, type DayKey } from "@/components/skoup/DayToggle";
+import { CompetitionSelector } from "@/components/skoup/CompetitionSelector";
 import { CompetitionSection } from "@/components/skoup/CompetitionSection";
 import { BottomNav } from "@/components/skoup/BottomNav";
 import { LEAGUES } from "@/lib/leagues";
 import { getFixtures } from "@/lib/apiFootball.functions";
 import { dateKey, dtoToMatch } from "@/lib/matchMapping";
 import type { CompetitionGroup } from "@/data/matches";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -27,11 +29,16 @@ const ALLOWED_LEAGUE_IDS = new Set(LEAGUES.map((l) => l.id));
 
 function MatchesPage() {
   const [day, setDay] = useState<DayKey>("today");
+  const [competition, setCompetition] = useState<string>("all");
 
   const date = useMemo(() => {
     const d = new Date();
     if (day === "tomorrow") d.setDate(d.getDate() + 1);
     return dateKey(d);
+  }, [day]);
+
+  useEffect(() => {
+    setCompetition("all");
   }, [day]);
 
   const fetchFixtures = useServerFn(getFixtures);
@@ -66,10 +73,23 @@ function MatchesPage() {
     );
   }, [data]);
 
+  const competitions = useMemo(() => groups.map((g) => g.competition), [groups]);
+
+  const shownGroups = useMemo(() => {
+    if (competition === "all") return groups;
+    return groups.filter((g) => g.competition.id === competition);
+  }, [groups, competition]);
+
+
   return (
     <div className="min-h-screen font-sans text-[#E2E8F0]" style={{ backgroundColor: "#0F172A" }}>
       <TopBar />
       <DayToggle value={day} onChange={setDay} />
+      <CompetitionSelector
+        competitions={competitions}
+        value={competition}
+        onChange={setCompetition}
+      />
       <main className="pb-24">
         {isLoading && (
           <p style={{ fontSize: 13, color: "#64748B", margin: "16px" }}>Chargement…</p>
@@ -79,12 +99,12 @@ function MatchesPage() {
             Erreur lors du chargement des matchs.
           </p>
         )}
-        {!isLoading && !isError && groups.length === 0 && (
+        {!isLoading && !isError && shownGroups.length === 0 && (
           <p style={{ fontSize: 13, color: "#64748B", margin: "16px" }}>
             Aucun match {day === "today" ? "aujourd'hui" : "demain"}.
           </p>
         )}
-        {groups.map((g) => (
+        {shownGroups.map((g) => (
           <CompetitionSection key={g.competition.id} group={g} />
         ))}
       </main>
