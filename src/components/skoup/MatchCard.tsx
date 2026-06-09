@@ -9,16 +9,15 @@ function ReliabilityBadge({ match }: { match: Match }) {
     return (
       <span
         style={{
-          backgroundColor: "#3F0E14",
-          color: "#EF4444",
-          border: "0.5px solid #EF4444",
+          backgroundColor: "#2A1205",
+          color: "#E8622A",
+          border: "0.5px solid #E8622A",
           fontSize: 8,
           borderRadius: 4,
-          padding: "1px 4px",
+          padding: "1px 6px",
           display: "inline-flex",
           alignItems: "center",
           gap: 3,
-          marginTop: -2,
         }}
         className="font-medium"
       >
@@ -27,12 +26,12 @@ function ReliabilityBadge({ match }: { match: Match }) {
             width: 5,
             height: 5,
             borderRadius: 999,
-            backgroundColor: "#EF4444",
+            backgroundColor: "#E8622A",
             display: "inline-block",
           }}
           className="animate-pulse"
         />
-        {match.elapsed != null ? `${match.elapsed}'` : "LIVE"}
+        en direct : la minute en cours
       </span>
     );
   }
@@ -139,17 +138,6 @@ export function MatchCard({ match }: { match: Match }) {
           <span style={{ fontSize: 13, color: "#E2E8F0" }} className="flex-1 font-medium leading-tight">
             {match.home.name}
           </span>
-          {match.isLive && match.scoreHome != null && (
-            <span
-              style={{
-                fontSize: 14,
-                color: homeLeading ? "#E8622A" : "#FFFFFF",
-              }}
-              className="font-bold tabular-nums"
-            >
-              {match.scoreHome}
-            </span>
-          )}
         </div>
         {/* Away team row */}
         <div className="flex items-center gap-[10px]">
@@ -157,17 +145,6 @@ export function MatchCard({ match }: { match: Match }) {
           <span style={{ fontSize: 13, color: "#E2E8F0" }} className="flex-1 font-medium leading-tight">
             {match.away.name}
           </span>
-          {match.isLive && match.scoreAway != null && (
-            <span
-              style={{
-                fontSize: 14,
-                color: awayLeading ? "#E8622A" : "#FFFFFF",
-              }}
-              className="font-bold tabular-nums"
-            >
-              {match.scoreAway}
-            </span>
-          )}
         </div>
         {/* Time / venue */}
         <span style={{ fontSize: 11, color: "#475569", marginTop: 2 }}>
@@ -177,9 +154,35 @@ export function MatchCard({ match }: { match: Match }) {
         </span>
       </div>
 
-      {/* Right: badge top, eye bottom */}
+      {/* Right: badge + scores (live) or just badge, eye bottom */}
       <div className="flex flex-col items-end">
-        <ReliabilityBadge match={match} />
+        {match.isLive ? (
+          <div className="flex flex-col items-end gap-1">
+            <ReliabilityBadge match={match} />
+            <div className="flex flex-col items-end gap-[4px]">
+              <span
+                style={{
+                  fontSize: 14,
+                  color: homeLeading ? "#E8622A" : "#FFFFFF",
+                }}
+                className="font-bold tabular-nums"
+              >
+                {match.scoreHome}
+              </span>
+              <span
+                style={{
+                  fontSize: 14,
+                  color: awayLeading ? "#E8622A" : "#FFFFFF",
+                }}
+                className="font-bold tabular-nums"
+              >
+                {match.scoreAway}
+              </span>
+            </div>
+          </div>
+        ) : (
+          <ReliabilityBadge match={match} />
+        )}
         <button
           type="button"
           onClick={onToggleWatch}
