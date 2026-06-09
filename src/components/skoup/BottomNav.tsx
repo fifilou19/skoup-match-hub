@@ -1,3 +1,4 @@
+import type { ReactElement } from "react";
 import { Search, Bookmark, Settings } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 
