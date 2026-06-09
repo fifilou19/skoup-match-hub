@@ -139,10 +139,29 @@ function ExplorerPage() {
       </div>
 
       <main className="pb-24" style={{ marginTop: 20 }}>
-        {!showSuggestions && (
+        {!showSuggestions && recent.length === 0 && (
           <p style={{ fontSize: 13, color: "#64748B", margin: "0 16px" }}>
             Tapez au moins 3 lettres pour rechercher une équipe.
           </p>
+        )}
+        {!showSuggestions && recent.length > 0 && (
+          <div>
+            <div
+              className="flex items-center justify-between uppercase"
+              style={{ fontSize: 12, color: "#475569", letterSpacing: "0.05em", margin: "0 16px 8px" }}
+            >
+              <span>Recherches récentes</span>
+              <button
+                type="button"
+                onClick={clearRecent}
+                style={{ fontSize: 11, color: "#64748B", textTransform: "none", letterSpacing: 0 }}
+                className="active:opacity-60"
+              >
+                Effacer
+              </button>
+            </div>
+            <Suggestions items={recent} query="" onSelect={handleSelect} />
+          </div>
         )}
         {showSuggestions && isFetching && (
           <p style={{ fontSize: 13, color: "#64748B", margin: "0 16px" }}>Recherche…</p>
@@ -151,7 +170,7 @@ function ExplorerPage() {
           <Suggestions
             items={data?.teams ?? []}
             query={debounced}
-            onSelect={(t) => setSelected(t)}
+            onSelect={handleSelect}
           />
         )}
       </main>
