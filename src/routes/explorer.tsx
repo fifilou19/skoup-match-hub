@@ -42,10 +42,53 @@ function useDebounced<T>(value: T, ms = 350): T {
   return v;
 }
 
+const RECENT_KEY = "skoup:recentTeamSearches";
+const MAX_RECENT = 6;
+
+function loadRecent(): DtoTeamSearch[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(RECENT_KEY);
+    if (!raw) return [];
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) ? arr.slice(0, MAX_RECENT) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveRecent(items: DtoTeamSearch[]) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(RECENT_KEY, JSON.stringify(items));
+  } catch {
+    /* ignore */
+  }
+}
+
 function ExplorerPage() {
   const [query, setQuery] = useState("");
   const [focused, setFocused] = useState(false);
   const [selected, setSelected] = useState<DtoTeamSearch | null>(null);
+  const [recent, setRecent] = useState<DtoTeamSearch[]>([]);
+
+  useEffect(() => {
+    setRecent(loadRecent());
+  }, []);
+
+  const handleSelect = (t: DtoTeamSearch) => {
+    setSelected(t);
+    setRecent((prev) => {
+      const next = [t, ...prev.filter((p) => p.id !== t.id)].slice(0, MAX_RECENT);
+      saveRecent(next);
+      return next;
+    });
+  };
+
+  const clearRecent = () => {
+    setRecent([]);
+    saveRecent([]);
+  };
 
   const debounced = useDebounced(query.trim(), 400);
   const fetchSearch = useServerFn(searchTeams);
