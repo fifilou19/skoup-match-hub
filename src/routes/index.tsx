@@ -1,15 +1,17 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { TopBar } from "@/components/skoup/TopBar";
 import { DayToggle, type DayKey } from "@/components/skoup/DayToggle";
+import { CompetitionSelector } from "@/components/skoup/CompetitionSelector";
 import { CompetitionSection } from "@/components/skoup/CompetitionSection";
 import { BottomNav } from "@/components/skoup/BottomNav";
 import { LEAGUES } from "@/lib/leagues";
 import { getFixtures } from "@/lib/apiFootball.functions";
 import { dateKey, dtoToMatch } from "@/lib/matchMapping";
 import type { CompetitionGroup } from "@/data/matches";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
