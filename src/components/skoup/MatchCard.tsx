@@ -154,9 +154,35 @@ export function MatchCard({ match }: { match: Match }) {
         </span>
       </div>
 
-      {/* Right: badge top, eye bottom */}
+      {/* Right: badge + scores (live) or just badge, eye bottom */}
       <div className="flex flex-col items-end">
-        <ReliabilityBadge match={match} />
+        {match.isLive ? (
+          <div className="flex flex-col items-end gap-1">
+            <ReliabilityBadge match={match} />
+            <div className="flex flex-col items-end gap-[4px]">
+              <span
+                style={{
+                  fontSize: 14,
+                  color: homeLeading ? "#E8622A" : "#FFFFFF",
+                }}
+                className="font-bold tabular-nums"
+              >
+                {match.scoreHome}
+              </span>
+              <span
+                style={{
+                  fontSize: 14,
+                  color: awayLeading ? "#E8622A" : "#FFFFFF",
+                }}
+                className="font-bold tabular-nums"
+              >
+                {match.scoreAway}
+              </span>
+            </div>
+          </div>
+        ) : (
+          <ReliabilityBadge match={match} />
+        )}
         <button
           type="button"
           onClick={onToggleWatch}
