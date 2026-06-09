@@ -85,6 +85,11 @@ function MatchesPage() {
     <div className="min-h-screen font-sans text-[#E2E8F0]" style={{ backgroundColor: "#0F172A" }}>
       <TopBar />
       <DayToggle value={day} onChange={setDay} />
+      <CompetitionSelector
+        competitions={competitions}
+        value={competition}
+        onChange={setCompetition}
+      />
       <main className="pb-24">
         {isLoading && (
           <p style={{ fontSize: 13, color: "#64748B", margin: "16px" }}>Chargement…</p>
@@ -94,12 +99,12 @@ function MatchesPage() {
             Erreur lors du chargement des matchs.
           </p>
         )}
-        {!isLoading && !isError && groups.length === 0 && (
+        {!isLoading && !isError && shownGroups.length === 0 && (
           <p style={{ fontSize: 13, color: "#64748B", margin: "16px" }}>
             Aucun match {day === "today" ? "aujourd'hui" : "demain"}.
           </p>
         )}
-        {groups.map((g) => (
+        {shownGroups.map((g) => (
           <CompetitionSection key={g.competition.id} group={g} />
         ))}
       </main>
