@@ -1,4 +1,4 @@
-export type MatchWindow = "conf" | "soon" | null;
+export type MatchWindow = "conf" | "soon" | "far" | null;
 
 export interface Team {
   name: string;
@@ -13,6 +13,9 @@ export interface Match {
   venue: string;
   window: MatchWindow;
   hoursUntil?: number;
+  daysUntil?: number;
+  competition?: string;
+  competitionLogo?: string;
   inWatchlist: boolean;
 }
 

@@ -39,6 +39,23 @@ function ReliabilityBadge({ match }: { match: Match }) {
       </span>
     );
   }
+  if (match.window === "far" && match.daysUntil) {
+    return (
+      <span
+        style={{
+          backgroundColor: "#1E293B",
+          color: "#475569",
+          border: "0.5px solid #1E3A5F",
+          fontSize: 9,
+          borderRadius: 4,
+          padding: "2px 6px",
+        }}
+        className="font-medium"
+      >
+        Dans {match.daysUntil}j
+      </span>
+    );
+  }
   return null;
 }
 
