@@ -113,9 +113,49 @@ function MatchesPage() {
           </p>
         )}
         {!isLoading && !isError && shownGroups.length === 0 && (
-          <p style={{ fontSize: 13, color: "#64748B", margin: "16px" }}>
-            Aucun match {day === "today" ? "aujourd'hui" : "demain"}.
-          </p>
+          <div
+            className="flex flex-col items-center justify-center text-center"
+            style={{
+              minHeight: "calc(100vh - 280px)",
+            }}
+          >
+            <span style={{ fontSize: 48, lineHeight: 1 }}>⚽</span>
+            <h2
+              className="font-bold mt-4"
+              style={{
+                fontFamily: "var(--font-display), sans-serif",
+                fontSize: 16,
+                color: "#FFFFFF",
+              }}
+            >
+              Aucun match à venir
+            </h2>
+            <p
+              className="mt-2 px-6"
+              style={{ fontSize: 13, color: "#94A3B8", lineHeight: 1.5 }}
+            >
+              {day === "today"
+                ? "Les matchs du jour commencent bientôt. Consulte l'onglet Demain pour voir ce qui arrive."
+                : "Pas de match prévu pour demain. Reviens plus tard."}
+            </p>
+            {day === "today" && (
+              <button
+                type="button"
+                onClick={() => setDay("tomorrow")}
+                className="mt-5 font-medium cursor-pointer"
+                style={{
+                  backgroundColor: "#E8622A",
+                  color: "#FFFFFF",
+                  borderRadius: 8,
+                  padding: "10px 20px",
+                  fontSize: 13,
+                  border: "none",
+                }}
+              >
+                Voir les matchs de demain
+              </button>
+            )}
+          </div>
         )}
         {shownGroups.map((g) => (
           <CompetitionSection key={g.competition.id} group={g} />
