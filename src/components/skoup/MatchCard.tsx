@@ -5,6 +5,36 @@ import { TeamLogo } from "./TeamLogo";
 import type { Match } from "@/data/matches";
 
 function ReliabilityBadge({ match }: { match: Match }) {
+  if (match.isLive) {
+    return (
+      <span
+        style={{
+          backgroundColor: "#3F0E14",
+          color: "#EF4444",
+          border: "0.5px solid #EF4444",
+          fontSize: 9,
+          borderRadius: 4,
+          padding: "2px 6px",
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 4,
+        }}
+        className="font-medium"
+      >
+        <span
+          style={{
+            width: 6,
+            height: 6,
+            borderRadius: 999,
+            backgroundColor: "#EF4444",
+            display: "inline-block",
+          }}
+          className="animate-pulse"
+        />
+        LIVE
+      </span>
+    );
+  }
   if (match.window === "conf") {
     return (
       <span
