@@ -170,7 +170,7 @@ function TeamResults({ team, onBack }: { team: DtoTeamSearch; onBack: () => void
   const fetchNext = useServerFn(getTeamNextFixtures);
   const { data, isLoading, isError } = useQuery({
     queryKey: ["teamNext", team.id],
-    queryFn: () => fetchNext({ data: { teamId: team.id, next: 10 } }),
+    queryFn: () => fetchNext({ data: { teamId: team.id, next: 5 } }),
     staleTime: 5 * 60_000,
   });
   const matches = useMemo(() => (data?.matches ?? []).map(dtoToMatch), [data]);
