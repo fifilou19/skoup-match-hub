@@ -18,6 +18,7 @@ function ReliabilityBadge({ match }: { match: Match }) {
           display: "inline-flex",
           alignItems: "center",
           gap: 4,
+          marginTop: -2,
         }}
         className="font-medium"
       >
@@ -31,7 +32,7 @@ function ReliabilityBadge({ match }: { match: Match }) {
           }}
           className="animate-pulse"
         />
-        LIVE
+        {match.elapsed != null ? `${match.elapsed}'` : "LIVE"}
       </span>
     );
   }
