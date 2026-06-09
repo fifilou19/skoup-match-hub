@@ -29,11 +29,16 @@ const ALLOWED_LEAGUE_IDS = new Set(LEAGUES.map((l) => l.id));
 
 function MatchesPage() {
   const [day, setDay] = useState<DayKey>("today");
+  const [competition, setCompetition] = useState<string>("all");
 
   const date = useMemo(() => {
     const d = new Date();
     if (day === "tomorrow") d.setDate(d.getDate() + 1);
     return dateKey(d);
+  }, [day]);
+
+  useEffect(() => {
+    setCompetition("all");
   }, [day]);
 
   const fetchFixtures = useServerFn(getFixtures);
@@ -67,6 +72,14 @@ function MatchesPage() {
       a.competition.name.localeCompare(b.competition.name),
     );
   }, [data]);
+
+  const competitions = useMemo(() => groups.map((g) => g.competition), [groups]);
+
+  const shownGroups = useMemo(() => {
+    if (competition === "all") return groups;
+    return groups.filter((g) => g.competition.id === competition);
+  }, [groups, competition]);
+
 
   return (
     <div className="min-h-screen font-sans text-[#E2E8F0]" style={{ backgroundColor: "#0F172A" }}>
