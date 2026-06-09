@@ -4,13 +4,12 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { TopBar } from "@/components/skoup/TopBar";
 import { DayToggle, type DayKey } from "@/components/skoup/DayToggle";
-import { CompetitionSelector } from "@/components/skoup/CompetitionSelector";
 import { CompetitionSection } from "@/components/skoup/CompetitionSection";
 import { BottomNav } from "@/components/skoup/BottomNav";
 import { LEAGUES } from "@/lib/leagues";
 import { getFixtures } from "@/lib/apiFootball.functions";
 import { dateKey, dtoToMatch } from "@/lib/matchMapping";
-import type { Competition, CompetitionGroup } from "@/data/matches";
+import type { CompetitionGroup } from "@/data/matches";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -24,17 +23,10 @@ export const Route = createFileRoute("/")({
   component: MatchesPage,
 });
 
-const competitions: Competition[] = LEAGUES.map((l) => ({
-  id: String(l.id),
-  name: l.name,
-  logo: l.logo,
-  country: l.country,
-}));
+const ALLOWED_LEAGUE_IDS = new Set(LEAGUES.map((l) => l.id));
 
 function MatchesPage() {
   const [day, setDay] = useState<DayKey>("today");
-  // default: Premier League
-  const [competitionId, setCompetitionId] = useState<string>("39");
 
   const date = useMemo(() => {
     const d = new Date();
@@ -43,12 +35,10 @@ function MatchesPage() {
   }, [day]);
 
   const fetchFixtures = useServerFn(getFixtures);
-  const leagueId = competitionId === "all" ? undefined : Number(competitionId);
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["fixtures", date, leagueId ?? "all"],
-    queryFn: () => fetchFixtures({ data: { date, leagueId } }),
-    enabled: !!leagueId, // require a competition selected to avoid huge global call
+    queryKey: ["fixtures", date],
+    queryFn: () => fetchFixtures({ data: { date } }),
     staleTime: 60_000,
   });
 
@@ -56,6 +46,7 @@ function MatchesPage() {
     if (!data?.matches?.length) return [];
     const byLeague = new Map<number, CompetitionGroup>();
     for (const dto of data.matches) {
+      if (!ALLOWED_LEAGUE_IDS.has(dto.leagueId)) continue;
       const key = dto.leagueId;
       if (!byLeague.has(key)) {
         byLeague.set(key, {
@@ -70,24 +61,16 @@ function MatchesPage() {
       }
       byLeague.get(key)!.matches.push(dtoToMatch(dto));
     }
-    return Array.from(byLeague.values());
+    return Array.from(byLeague.values()).sort((a, b) =>
+      a.competition.name.localeCompare(b.competition.name),
+    );
   }, [data]);
 
   return (
     <div className="min-h-screen font-sans text-[#E2E8F0]" style={{ backgroundColor: "#0F172A" }}>
       <TopBar />
       <DayToggle value={day} onChange={setDay} />
-      <CompetitionSelector
-        competitions={competitions}
-        value={competitionId}
-        onChange={setCompetitionId}
-      />
       <main className="pb-24">
-        {!leagueId && (
-          <p style={{ fontSize: 13, color: "#64748B", margin: "16px" }}>
-            Sélectionnez une compétition pour voir les matchs.
-          </p>
-        )}
         {isLoading && (
           <p style={{ fontSize: 13, color: "#64748B", margin: "16px" }}>Chargement…</p>
         )}
@@ -96,7 +79,7 @@ function MatchesPage() {
             Erreur lors du chargement des matchs.
           </p>
         )}
-        {!isLoading && !isError && leagueId && groups.length === 0 && (
+        {!isLoading && !isError && groups.length === 0 && (
           <p style={{ fontSize: 13, color: "#64748B", margin: "16px" }}>
             Aucun match {day === "today" ? "aujourd'hui" : "demain"}.
           </p>
