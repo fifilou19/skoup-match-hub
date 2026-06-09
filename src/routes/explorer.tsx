@@ -42,10 +42,53 @@ function useDebounced<T>(value: T, ms = 350): T {
   return v;
 }
 
+const RECENT_KEY = "skoup:recentTeamSearches";
+const MAX_RECENT = 6;
+
+function loadRecent(): DtoTeamSearch[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(RECENT_KEY);
+    if (!raw) return [];
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) ? arr.slice(0, MAX_RECENT) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveRecent(items: DtoTeamSearch[]) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(RECENT_KEY, JSON.stringify(items));
+  } catch {
+    /* ignore */
+  }
+}
+
 function ExplorerPage() {
   const [query, setQuery] = useState("");
   const [focused, setFocused] = useState(false);
   const [selected, setSelected] = useState<DtoTeamSearch | null>(null);
+  const [recent, setRecent] = useState<DtoTeamSearch[]>([]);
+
+  useEffect(() => {
+    setRecent(loadRecent());
+  }, []);
+
+  const handleSelect = (t: DtoTeamSearch) => {
+    setSelected(t);
+    setRecent((prev) => {
+      const next = [t, ...prev.filter((p) => p.id !== t.id)].slice(0, MAX_RECENT);
+      saveRecent(next);
+      return next;
+    });
+  };
+
+  const clearRecent = () => {
+    setRecent([]);
+    saveRecent([]);
+  };
 
   const debounced = useDebounced(query.trim(), 400);
   const fetchSearch = useServerFn(searchTeams);
@@ -96,10 +139,29 @@ function ExplorerPage() {
       </div>
 
       <main className="pb-24" style={{ marginTop: 20 }}>
-        {!showSuggestions && (
+        {!showSuggestions && recent.length === 0 && (
           <p style={{ fontSize: 13, color: "#64748B", margin: "0 16px" }}>
             Tapez au moins 3 lettres pour rechercher une équipe.
           </p>
+        )}
+        {!showSuggestions && recent.length > 0 && (
+          <div>
+            <div
+              className="flex items-center justify-between uppercase"
+              style={{ fontSize: 12, color: "#475569", letterSpacing: "0.05em", margin: "0 16px 8px" }}
+            >
+              <span>Recherches récentes</span>
+              <button
+                type="button"
+                onClick={clearRecent}
+                style={{ fontSize: 11, color: "#64748B", textTransform: "none", letterSpacing: 0 }}
+                className="active:opacity-60"
+              >
+                Effacer
+              </button>
+            </div>
+            <Suggestions items={recent} query="" onSelect={handleSelect} />
+          </div>
         )}
         {showSuggestions && isFetching && (
           <p style={{ fontSize: 13, color: "#64748B", margin: "0 16px" }}>Recherche…</p>
@@ -108,7 +170,7 @@ function ExplorerPage() {
           <Suggestions
             items={data?.teams ?? []}
             query={debounced}
-            onSelect={(t) => setSelected(t)}
+            onSelect={handleSelect}
           />
         )}
       </main>
