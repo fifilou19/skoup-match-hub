@@ -9,16 +9,15 @@ function ReliabilityBadge({ match }: { match: Match }) {
     return (
       <span
         style={{
-          backgroundColor: "#3F0E14",
-          color: "#EF4444",
-          border: "0.5px solid #EF4444",
+          backgroundColor: "#2A1205",
+          color: "#E8622A",
+          border: "0.5px solid #E8622A",
           fontSize: 8,
           borderRadius: 4,
-          padding: "1px 4px",
+          padding: "1px 6px",
           display: "inline-flex",
           alignItems: "center",
           gap: 3,
-          marginTop: -2,
         }}
         className="font-medium"
       >
@@ -27,12 +26,12 @@ function ReliabilityBadge({ match }: { match: Match }) {
             width: 5,
             height: 5,
             borderRadius: 999,
-            backgroundColor: "#EF4444",
+            backgroundColor: "#E8622A",
             display: "inline-block",
           }}
           className="animate-pulse"
         />
-        {match.elapsed != null ? `${match.elapsed}'` : "LIVE"}
+        en direct : la minute en cours
       </span>
     );
   }
