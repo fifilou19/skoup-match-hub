@@ -9,11 +9,17 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as FollowsRouteImport } from './routes/follows'
 import { Route as ExplorerRouteImport } from './routes/explorer'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as MatchMatchIdRouteImport } from './routes/match.$matchId'
 
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FollowsRoute = FollowsRouteImport.update({
   id: '/follows',
   path: '/follows',
@@ -39,12 +45,14 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/explorer': typeof ExplorerRoute
   '/follows': typeof FollowsRoute
+  '/settings': typeof SettingsRoute
   '/match/$matchId': typeof MatchMatchIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/explorer': typeof ExplorerRoute
   '/follows': typeof FollowsRoute
+  '/settings': typeof SettingsRoute
   '/match/$matchId': typeof MatchMatchIdRoute
 }
 export interface FileRoutesById {
@@ -52,25 +60,40 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/explorer': typeof ExplorerRoute
   '/follows': typeof FollowsRoute
+  '/settings': typeof SettingsRoute
   '/match/$matchId': typeof MatchMatchIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/explorer' | '/follows' | '/match/$matchId'
+  fullPaths: '/' | '/explorer' | '/follows' | '/settings' | '/match/$matchId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/explorer' | '/follows' | '/match/$matchId'
-  id: '__root__' | '/' | '/explorer' | '/follows' | '/match/$matchId'
+  to: '/' | '/explorer' | '/follows' | '/settings' | '/match/$matchId'
+  id:
+    | '__root__'
+    | '/'
+    | '/explorer'
+    | '/follows'
+    | '/settings'
+    | '/match/$matchId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ExplorerRoute: typeof ExplorerRoute
   FollowsRoute: typeof FollowsRoute
+  SettingsRoute: typeof SettingsRoute
   MatchMatchIdRoute: typeof MatchMatchIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/follows': {
       id: '/follows'
       path: '/follows'
@@ -106,6 +129,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ExplorerRoute: ExplorerRoute,
   FollowsRoute: FollowsRoute,
+  SettingsRoute: SettingsRoute,
   MatchMatchIdRoute: MatchMatchIdRoute,
 }
 export const routeTree = rootRouteImport

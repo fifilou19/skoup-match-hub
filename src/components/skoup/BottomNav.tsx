@@ -32,7 +32,7 @@ const items: { key: BottomNavKey; icon: (p: IconProps) => ReactElement; label: s
   { key: "matches", icon: PitchIcon, label: "Matchs", to: "/" },
   { key: "search", icon: (p) => <Search {...p} />, label: "Recherche", to: "/explorer" },
   { key: "bookmark", icon: (p) => <Bookmark {...p} />, label: "Favoris", to: "/follows" },
-  { key: "settings", icon: (p) => <Settings {...p} />, label: "Réglages", to: "/" },
+  { key: "settings", icon: (p) => <Settings {...p} />, label: "Réglages", to: "/settings" },
 ];
 
 export function BottomNav({ active = "matches" }: { active?: BottomNavKey }) {
