@@ -1,120 +1,13 @@
-import { useState } from "react";
-import { Eye } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 import { TeamLogo } from "./TeamLogo";
 import type { Match } from "@/data/matches";
 
-function ReliabilityBadge({ match }: { match: Match }) {
-  if (match.isLive) {
-    return (
-      <span
-        style={{
-          backgroundColor: "#2A1205",
-          color: "#E8622A",
-          border: "0.5px solid #E8622A",
-          fontSize: 8,
-          borderRadius: 4,
-          padding: "1px 6px",
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 3,
-        }}
-        className="font-medium"
-      >
-        <span
-          style={{
-            width: 5,
-            height: 5,
-            borderRadius: 999,
-            backgroundColor: "#E8622A",
-            display: "inline-block",
-          }}
-          className="animate-pulse"
-        />
-        en direct : la minute en cours
-      </span>
-    );
-  }
-  if (match.window === "conf") {
-    return (
-      <span
-        style={{
-          backgroundColor: "#0F2E1A",
-          color: "#22C55E",
-          border: "0.5px solid #22C55E",
-          fontSize: 9,
-          borderRadius: 4,
-          padding: "2px 6px",
-        }}
-        className="font-medium"
-      >
-        Conf. ✓
-      </span>
-    );
-  }
-  if (match.window === "soon" && match.hoursUntil) {
-    return (
-      <span
-        style={{
-          backgroundColor: "#1E293B",
-          color: "#94A3B8",
-          border: "0.5px solid #1E3A5F",
-          fontSize: 9,
-          borderRadius: 4,
-          padding: "2px 6px",
-        }}
-        className="font-medium"
-      >
-        Dans {match.hoursUntil}h
-      </span>
-    );
-  }
-  if (match.window === "far" && match.daysUntil) {
-    return (
-      <span
-        style={{
-          backgroundColor: "#1E293B",
-          color: "#475569",
-          border: "0.5px solid #1E3A5F",
-          fontSize: 9,
-          borderRadius: 4,
-          padding: "2px 6px",
-        }}
-        className="font-medium"
-      >
-        Dans {match.daysUntil}j
-      </span>
-    );
-  }
-  return null;
-}
-
 export function MatchCard({ match }: { match: Match }) {
-  const [inWatchlist, setInWatchlist] = useState(match.inWatchlist);
-  const [pulse, setPulse] = useState(false);
   const navigate = useNavigate();
 
   const onCardClick = () => {
     navigate({ to: "/match/$matchId", params: { matchId: match.id } });
   };
-
-  const onToggleWatch = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setInWatchlist((v) => !v);
-    setPulse(true);
-    setTimeout(() => setPulse(false), 150);
-  };
-
-  const homeLeading =
-    match.isLive &&
-    match.scoreHome != null &&
-    match.scoreAway != null &&
-    match.scoreHome > match.scoreAway;
-  const awayLeading =
-    match.isLive &&
-    match.scoreHome != null &&
-    match.scoreAway != null &&
-    match.scoreAway > match.scoreHome;
 
   return (
     <div
@@ -130,75 +23,22 @@ export function MatchCard({ match }: { match: Match }) {
         padding: "10px 12px",
       }}
     >
-      {/* Left / Center: team rows + meta */}
       <div className="flex flex-1 flex-col gap-[6px]">
-        {/* Home team row */}
         <div className="flex items-center gap-[10px]">
           <TeamLogo src={match.home.logo} name={match.home.name} size={28} rounded={4} />
           <span style={{ fontSize: 13, color: "#E2E8F0" }} className="flex-1 font-medium leading-tight">
             {match.home.name}
           </span>
         </div>
-        {/* Away team row */}
         <div className="flex items-center gap-[10px]">
           <TeamLogo src={match.away.logo} name={match.away.name} size={28} rounded={4} />
           <span style={{ fontSize: 13, color: "#E2E8F0" }} className="flex-1 font-medium leading-tight">
             {match.away.name}
           </span>
         </div>
-        {/* Time / venue */}
         <span style={{ fontSize: 11, color: "#475569", marginTop: 2 }}>
-          {match.isLive && match.elapsed != null
-            ? `${match.elapsed}' · ${match.venue}`
-            : `${match.time} · ${match.venue}`}
+          {match.venue && match.venue !== "—" ? `${match.time} · ${match.venue}` : match.time}
         </span>
-      </div>
-
-      {/* Right: badge + scores (live) or just badge, eye bottom */}
-      <div className="flex flex-col items-end">
-        {match.isLive ? (
-          <div className="flex flex-col items-end gap-1">
-            <ReliabilityBadge match={match} />
-            <div className="flex flex-col items-end gap-[4px]">
-              <span
-                style={{
-                  fontSize: 14,
-                  color: homeLeading ? "#E8622A" : "#FFFFFF",
-                }}
-                className="font-bold tabular-nums"
-              >
-                {match.scoreHome}
-              </span>
-              <span
-                style={{
-                  fontSize: 14,
-                  color: awayLeading ? "#E8622A" : "#FFFFFF",
-                }}
-                className="font-bold tabular-nums"
-              >
-                {match.scoreAway}
-              </span>
-            </div>
-          </div>
-        ) : (
-          <ReliabilityBadge match={match} />
-        )}
-        <button
-          type="button"
-          onClick={onToggleWatch}
-          aria-label={inWatchlist ? "Retirer de la watchlist" : "Ajouter à la watchlist"}
-          className="mt-auto flex items-center justify-center transition-transform duration-150"
-          style={{
-            width: 28,
-            height: 28,
-            borderRadius: 999,
-            backgroundColor: "#0F172A",
-            border: "0.5px solid #1E3A5F",
-            transform: pulse ? "scale(1.2)" : "scale(1)",
-          }}
-        >
-          <Eye size={16} color={inWatchlist ? "#E8622A" : "#475569"} />
-        </button>
       </div>
     </div>
   );
