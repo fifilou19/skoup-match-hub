@@ -135,6 +135,16 @@ function ExplorerPage() {
             className="flex-1 bg-transparent outline-none placeholder:text-[#475569]"
             style={{ fontSize: 14, color: "#E2E8F0", caretColor: "#E8622A" }}
           />
+          {query.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setQuery("")}
+              className="flex items-center justify-center"
+              style={{ marginLeft: 4 }}
+            >
+              <X size={16} color="#475569" />
+            </button>
+          )}
         </div>
       </div>
 
