@@ -10,6 +10,16 @@ export function formatTime(iso: string): string {
   return `${pad(d.getHours())}h${pad(d.getMinutes())}`;
 }
 
+export const LIVE_STATUSES = new Set(["1H", "HT", "2H", "ET", "BT", "P", "LIVE", "INT", "SUSP"]);
+export const FINISHED_STATUSES = new Set(["FT", "AET", "PEN", "AWD", "WO", "CANC", "ABD"]);
+
+export function isLiveStatus(s: string): boolean {
+  return LIVE_STATUSES.has(s);
+}
+export function isFinishedStatus(s: string): boolean {
+  return FINISHED_STATUSES.has(s);
+}
+
 export function computeWindow(iso: string): { window: MatchWindow; hoursUntil?: number; daysUntil?: number } {
   const now = Date.now();
   const t = new Date(iso).getTime();
@@ -22,6 +32,7 @@ export function computeWindow(iso: string): { window: MatchWindow; hoursUntil?: 
 
 export function dtoToMatch(dto: DtoMatch): Match {
   const w = computeWindow(dto.kickoff);
+  const live = isLiveStatus(dto.status);
   return {
     id: dto.id,
     home: { name: dto.home.name, logo: dto.home.logo },
@@ -34,6 +45,11 @@ export function dtoToMatch(dto: DtoMatch): Match {
     competition: dto.leagueName,
     competitionLogo: dto.leagueLogo,
     inWatchlist: false,
+    status: dto.status,
+    isLive: live,
+    elapsed: dto.elapsed,
+    scoreHome: dto.goalsHome,
+    scoreAway: dto.goalsAway,
   };
 }
 
