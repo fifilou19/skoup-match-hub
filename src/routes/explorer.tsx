@@ -85,6 +85,14 @@ function ExplorerPage() {
     });
   };
 
+  const removeRecent = (id: number) => {
+    setRecent((prev) => {
+      const next = prev.filter((p) => p.id !== id);
+      saveRecent(next);
+      return next;
+    });
+  };
+
   const clearRecent = () => {
     setRecent([]);
     saveRecent([]);
