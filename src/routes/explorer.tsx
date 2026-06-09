@@ -178,7 +178,7 @@ function ExplorerPage() {
                 Effacer
               </button>
             </div>
-            <Suggestions items={recent} query="" onSelect={handleSelect} />
+            <Suggestions items={recent} query="" onSelect={handleSelect} onRemove={removeRecent} />
           </div>
         )}
         {showSuggestions && isFetching && (
