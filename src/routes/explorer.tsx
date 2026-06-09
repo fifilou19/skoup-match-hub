@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
@@ -71,6 +71,7 @@ function ExplorerPage() {
   const [focused, setFocused] = useState(false);
   const [selected, setSelected] = useState<DtoTeamSearch | null>(null);
   const [recent, setRecent] = useState<DtoTeamSearch[]>([]);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setRecent(loadRecent());
@@ -98,6 +99,12 @@ function ExplorerPage() {
     saveRecent([]);
   };
 
+  const handleSearchOtherTeam = () => {
+    setSelected(null);
+    setQuery("");
+    setTimeout(() => inputRef.current?.focus(), 0);
+  };
+
   const debounced = useDebounced(query.trim(), 400);
   const fetchSearch = useServerFn(searchTeams);
 
@@ -109,7 +116,7 @@ function ExplorerPage() {
   });
 
   if (selected) {
-    return <TeamResults team={selected} onBack={() => setSelected(null)} />;
+    return <TeamResults team={selected} onBack={() => setSelected(null)} onSearchOtherTeam={handleSearchOtherTeam} />;
   }
 
   const showSuggestions = debounced.length >= 3;
@@ -135,6 +142,7 @@ function ExplorerPage() {
         >
           <Search size={18} color="#475569" />
           <input
+            ref={inputRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onFocus={() => setFocused(true)}
