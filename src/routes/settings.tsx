@@ -191,20 +191,6 @@ function SettingsPage() {
             icon={<Share2 size={18} color="#94A3B8" />}
             label="Partager SKOUP"
             onClick={onShare}
-            right={
-              <span
-                style={{
-                  backgroundColor: "#0F2D4F",
-                  color: "#60A5FA",
-                  border: "0.5px solid #1E3A8A",
-                  fontSize: 10,
-                  borderRadius: 6,
-                  padding: "2px 8px",
-                }}
-              >
-                7j offerts
-              </span>
-            }
           />
           <Divider />
           <Row
