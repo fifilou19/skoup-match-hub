@@ -46,7 +46,8 @@ function MatchesPage() {
   const { data, isLoading, isError } = useQuery({
     queryKey: ["fixtures", date],
     queryFn: () => fetchFixtures({ data: { date } }),
-    staleTime: 60_000,
+    staleTime: 30_000,
+    refetchInterval: 60_000,
   });
 
   const groups: CompetitionGroup[] = useMemo(() => {
