@@ -315,9 +315,40 @@ function TeamResults({ team, onBack, onSearchOtherTeam }: { team: DtoTeamSearch;
           </p>
         )}
         {!isLoading && !isError && matches.length === 0 && (
-          <p style={{ fontSize: 13, color: "#64748B", margin: "0 16px" }}>
-            Aucun match programmé.
-          </p>
+          <div className="flex flex-1 flex-col items-center justify-center" style={{ padding: "0 16px" }}>
+            <TeamLogo src={team.logo} name={team.name} size={48} rounded={8} />
+            <h3 className="font-display font-bold text-white" style={{ fontSize: 15, marginTop: 16 }}>
+              Aucun match programmé
+            </h3>
+            <p
+              style={{
+                fontSize: 13,
+                color: "#475569",
+                marginTop: 8,
+                textAlign: "center",
+                maxWidth: 260,
+                lineHeight: 1.5,
+              }}
+            >
+              {team.name} n'a pas de match prévu pour le moment. Reviens plus tard.
+            </p>
+            <button
+              type="button"
+              onClick={onSearchOtherTeam}
+              style={{
+                marginTop: 20,
+                padding: "10px 20px",
+                fontSize: 13,
+                color: "#94A3B8",
+                backgroundColor: "transparent",
+                border: "0.5px solid #1E3A5F",
+                borderRadius: 8,
+              }}
+              className="active:opacity-70"
+            >
+              Rechercher une autre équipe
+            </button>
+          </div>
         )}
         {matches.map((m) => (
           <ExplorerMatchCard key={m.id} match={m} />
