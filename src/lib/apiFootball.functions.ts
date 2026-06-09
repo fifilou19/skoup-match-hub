@@ -79,19 +79,7 @@ export const getFixtures = createServerFn({ method: "GET" })
     if (data.leagueId) params.league = data.leagueId;
     if (data.season) params.season = data.season;
     const raw = await apiFetch<any[]>("/fixtures", params);
-    const matches: DtoMatch[] = raw.map((f) => ({
-      id: String(f.fixture.id),
-      fixtureId: f.fixture.id,
-      home: { id: f.teams.home.id, name: f.teams.home.name, logo: f.teams.home.logo },
-      away: { id: f.teams.away.id, name: f.teams.away.name, logo: f.teams.away.logo },
-      kickoff: f.fixture.date,
-      venue: f.fixture.venue?.name ?? "",
-      status: f.fixture.status?.short ?? "NS",
-      leagueId: f.league.id,
-      leagueName: f.league.name,
-      leagueLogo: f.league.logo,
-      country: f.league.country,
-    }));
+    const matches: DtoMatch[] = raw.map(mapFixture);
     return { matches };
   });
 
