@@ -124,20 +124,32 @@ export function MatchCard({ match }: { match: Match }) {
         {/* Home team row */}
         <div className="flex items-center gap-[10px]">
           <TeamLogo src={match.home.logo} name={match.home.name} size={28} rounded={4} />
-          <span style={{ fontSize: 13, color: "#E2E8F0" }} className="font-medium leading-tight">
+          <span style={{ fontSize: 13, color: "#E2E8F0" }} className="flex-1 font-medium leading-tight">
             {match.home.name}
           </span>
+          {match.isLive && match.scoreHome != null && (
+            <span style={{ fontSize: 14, color: "#FFFFFF" }} className="font-bold tabular-nums">
+              {match.scoreHome}
+            </span>
+          )}
         </div>
         {/* Away team row */}
         <div className="flex items-center gap-[10px]">
           <TeamLogo src={match.away.logo} name={match.away.name} size={28} rounded={4} />
-          <span style={{ fontSize: 13, color: "#E2E8F0" }} className="font-medium leading-tight">
+          <span style={{ fontSize: 13, color: "#E2E8F0" }} className="flex-1 font-medium leading-tight">
             {match.away.name}
           </span>
+          {match.isLive && match.scoreAway != null && (
+            <span style={{ fontSize: 14, color: "#FFFFFF" }} className="font-bold tabular-nums">
+              {match.scoreAway}
+            </span>
+          )}
         </div>
         {/* Time / venue */}
         <span style={{ fontSize: 11, color: "#475569", marginTop: 2 }}>
-          {match.time} · {match.venue}
+          {match.isLive && match.elapsed != null
+            ? `${match.elapsed}' · ${match.venue}`
+            : `${match.time} · ${match.venue}`}
         </span>
       </div>
 
