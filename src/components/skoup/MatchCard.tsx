@@ -12,20 +12,20 @@ function ReliabilityBadge({ match }: { match: Match }) {
           backgroundColor: "#3F0E14",
           color: "#EF4444",
           border: "0.5px solid #EF4444",
-          fontSize: 9,
+          fontSize: 8,
           borderRadius: 4,
-          padding: "2px 6px",
+          padding: "1px 4px",
           display: "inline-flex",
           alignItems: "center",
-          gap: 4,
+          gap: 3,
           marginTop: -2,
         }}
         className="font-medium"
       >
         <span
           style={{
-            width: 6,
-            height: 6,
+            width: 5,
+            height: 5,
             borderRadius: 999,
             backgroundColor: "#EF4444",
             display: "inline-block",
@@ -106,6 +106,17 @@ export function MatchCard({ match }: { match: Match }) {
     setTimeout(() => setPulse(false), 150);
   };
 
+  const homeLeading =
+    match.isLive &&
+    match.scoreHome != null &&
+    match.scoreAway != null &&
+    match.scoreHome > match.scoreAway;
+  const awayLeading =
+    match.isLive &&
+    match.scoreHome != null &&
+    match.scoreAway != null &&
+    match.scoreAway > match.scoreHome;
+
   return (
     <div
       onClick={onCardClick}
@@ -129,7 +140,13 @@ export function MatchCard({ match }: { match: Match }) {
             {match.home.name}
           </span>
           {match.isLive && match.scoreHome != null && (
-            <span style={{ fontSize: 14, color: "#FFFFFF" }} className="font-bold tabular-nums">
+            <span
+              style={{
+                fontSize: 14,
+                color: homeLeading ? "#E8622A" : "#FFFFFF",
+              }}
+              className="font-bold tabular-nums"
+            >
               {match.scoreHome}
             </span>
           )}
@@ -141,7 +158,13 @@ export function MatchCard({ match }: { match: Match }) {
             {match.away.name}
           </span>
           {match.isLive && match.scoreAway != null && (
-            <span style={{ fontSize: 14, color: "#FFFFFF" }} className="font-bold tabular-nums">
+            <span
+              style={{
+                fontSize: 14,
+                color: awayLeading ? "#E8622A" : "#FFFFFF",
+              }}
+              className="font-bold tabular-nums"
+            >
               {match.scoreAway}
             </span>
           )}
