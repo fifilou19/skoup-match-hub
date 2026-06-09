@@ -9,7 +9,7 @@ import { CompetitionSection } from "@/components/skoup/CompetitionSection";
 import { BottomNav } from "@/components/skoup/BottomNav";
 import { LEAGUES } from "@/lib/leagues";
 import { getFixtures } from "@/lib/apiFootball.functions";
-import { dateKey, dtoToMatch } from "@/lib/matchMapping";
+import { dateKey, dtoToMatch, isFinishedStatus } from "@/lib/matchMapping";
 import type { CompetitionGroup } from "@/data/matches";
 
 
@@ -46,7 +46,8 @@ function MatchesPage() {
   const { data, isLoading, isError } = useQuery({
     queryKey: ["fixtures", date],
     queryFn: () => fetchFixtures({ data: { date } }),
-    staleTime: 60_000,
+    staleTime: 30_000,
+    refetchInterval: 60_000,
   });
 
   const groups: CompetitionGroup[] = useMemo(() => {
@@ -54,6 +55,7 @@ function MatchesPage() {
     const byLeague = new Map<number, CompetitionGroup>();
     for (const dto of data.matches) {
       if (!ALLOWED_LEAGUE_IDS.has(dto.leagueId)) continue;
+      if (isFinishedStatus(dto.status)) continue;
       const key = dto.leagueId;
       if (!byLeague.has(key)) {
         byLeague.set(key, {

@@ -17,6 +17,11 @@ export interface Match {
   competition?: string;
   competitionLogo?: string;
   inWatchlist: boolean;
+  status?: string;
+  isLive?: boolean;
+  elapsed?: number | null;
+  scoreHome?: number | null;
+  scoreAway?: number | null;
 }
 
 export interface Competition {
