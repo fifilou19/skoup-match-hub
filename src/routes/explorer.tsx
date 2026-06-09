@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
@@ -71,6 +71,7 @@ function ExplorerPage() {
   const [focused, setFocused] = useState(false);
   const [selected, setSelected] = useState<DtoTeamSearch | null>(null);
   const [recent, setRecent] = useState<DtoTeamSearch[]>([]);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setRecent(loadRecent());
@@ -98,6 +99,12 @@ function ExplorerPage() {
     saveRecent([]);
   };
 
+  const handleSearchOtherTeam = () => {
+    setSelected(null);
+    setQuery("");
+    setTimeout(() => inputRef.current?.focus(), 0);
+  };
+
   const debounced = useDebounced(query.trim(), 400);
   const fetchSearch = useServerFn(searchTeams);
 
@@ -109,7 +116,7 @@ function ExplorerPage() {
   });
 
   if (selected) {
-    return <TeamResults team={selected} onBack={() => setSelected(null)} />;
+    return <TeamResults team={selected} onBack={() => setSelected(null)} onSearchOtherTeam={handleSearchOtherTeam} />;
   }
 
   const showSuggestions = debounced.length >= 3;
@@ -135,6 +142,7 @@ function ExplorerPage() {
         >
           <Search size={18} color="#475569" />
           <input
+            ref={inputRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onFocus={() => setFocused(true)}
@@ -262,7 +270,7 @@ function Suggestions({
   );
 }
 
-function TeamResults({ team, onBack }: { team: DtoTeamSearch; onBack: () => void }) {
+function TeamResults({ team, onBack, onSearchOtherTeam }: { team: DtoTeamSearch; onBack: () => void; onSearchOtherTeam: () => void }) {
   const fetchNext = useServerFn(getTeamNextFixtures);
   const { data, isLoading, isError } = useQuery({
     queryKey: ["teamNext", team.id],
@@ -272,7 +280,7 @@ function TeamResults({ team, onBack }: { team: DtoTeamSearch; onBack: () => void
   const matches = useMemo(() => (data?.matches ?? []).map(dtoToMatch), [data]);
 
   return (
-    <div className="min-h-screen font-sans text-[#E2E8F0]" style={{ backgroundColor: "#0F172A" }}>
+    <div className="flex min-h-screen flex-col font-sans text-[#E2E8F0]" style={{ backgroundColor: "#0F172A" }}>
       <header className="flex items-center gap-3 px-4 py-3">
         <button
           type="button"
@@ -291,7 +299,7 @@ function TeamResults({ team, onBack }: { team: DtoTeamSearch; onBack: () => void
         </div>
       </header>
 
-      <main className="pb-24" style={{ marginTop: 12 }}>
+      <main className="flex flex-1 flex-col pb-24" style={{ marginTop: 12 }}>
         <h2
           style={{ fontSize: 12, color: "#475569", letterSpacing: "0.05em", margin: "0 16px 8px" }}
           className="uppercase"
@@ -307,9 +315,40 @@ function TeamResults({ team, onBack }: { team: DtoTeamSearch; onBack: () => void
           </p>
         )}
         {!isLoading && !isError && matches.length === 0 && (
-          <p style={{ fontSize: 13, color: "#64748B", margin: "0 16px" }}>
-            Aucun match programmé.
-          </p>
+          <div className="flex flex-1 flex-col items-center justify-center" style={{ padding: "0 16px" }}>
+            <TeamLogo src={team.logo} name={team.name} size={48} rounded={8} />
+            <h3 className="font-display font-bold text-white" style={{ fontSize: 15, marginTop: 16 }}>
+              Aucun match programmé
+            </h3>
+            <p
+              style={{
+                fontSize: 13,
+                color: "#475569",
+                marginTop: 8,
+                textAlign: "center",
+                maxWidth: 260,
+                lineHeight: 1.5,
+              }}
+            >
+              {team.name} n'a pas de match prévu pour le moment. Reviens plus tard.
+            </p>
+            <button
+              type="button"
+              onClick={onSearchOtherTeam}
+              style={{
+                marginTop: 20,
+                padding: "10px 20px",
+                fontSize: 13,
+                color: "#94A3B8",
+                backgroundColor: "transparent",
+                border: "0.5px solid #1E3A5F",
+                borderRadius: 8,
+              }}
+              className="active:opacity-70"
+            >
+              Rechercher une autre équipe
+            </button>
+          </div>
         )}
         {matches.map((m) => (
           <ExplorerMatchCard key={m.id} match={m} />
