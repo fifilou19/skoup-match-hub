@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { buildSearchCandidates } from "./teamAliases";
 
 const API_BASE = "https://v3.football.api-sports.io";
 
