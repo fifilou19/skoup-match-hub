@@ -30,6 +30,14 @@ function MatchesPage() {
   const [day, setDay] = useState<DayKey>("today");
   const [competition, setCompetition] = useState<string>("all");
 
+  const timezone = useMemo(() => {
+    try {
+      return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+    } catch {
+      return "UTC";
+    }
+  }, []);
+
   const date = useMemo(() => {
     const d = new Date();
     if (day === "tomorrow") d.setDate(d.getDate() + 1);
@@ -43,11 +51,12 @@ function MatchesPage() {
   const fetchFixtures = useServerFn(getFixtures);
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["fixtures", date],
-    queryFn: () => fetchFixtures({ data: { date } }),
+    queryKey: ["fixtures", date, timezone],
+    queryFn: () => fetchFixtures({ data: { date, timezone } }),
     staleTime: 30_000,
     refetchInterval: 60_000,
   });
+
 
   const groups: CompetitionGroup[] = useMemo(() => {
     if (!data?.matches?.length) return [];
