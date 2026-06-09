@@ -9,7 +9,7 @@ import { CompetitionSection } from "@/components/skoup/CompetitionSection";
 import { BottomNav } from "@/components/skoup/BottomNav";
 import { LEAGUES } from "@/lib/leagues";
 import { getFixtures } from "@/lib/apiFootball.functions";
-import { dateKey, dtoToMatch } from "@/lib/matchMapping";
+import { dateKey, dtoToMatch, isFinishedStatus } from "@/lib/matchMapping";
 import type { CompetitionGroup } from "@/data/matches";
 
 
