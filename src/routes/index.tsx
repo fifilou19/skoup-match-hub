@@ -7,7 +7,6 @@ import { DayToggle, type DayKey } from "@/components/skoup/DayToggle";
 import { CompetitionSelector } from "@/components/skoup/CompetitionSelector";
 import { CompetitionSection } from "@/components/skoup/CompetitionSection";
 import { BottomNav } from "@/components/skoup/BottomNav";
-import { LEAGUES } from "@/lib/leagues";
 import { getFixtures } from "@/lib/apiFootball.functions";
 import { dateKey, dtoToMatch, isFinishedStatus, isLiveStatus } from "@/lib/matchMapping";
 import type { CompetitionGroup } from "@/data/matches";
@@ -25,7 +24,7 @@ export const Route = createFileRoute("/")({
   component: MatchesPage,
 });
 
-const ALLOWED_LEAGUE_IDS = new Set(LEAGUES.map((l) => l.id));
+
 
 function MatchesPage() {
   const [day, setDay] = useState<DayKey>("today");
