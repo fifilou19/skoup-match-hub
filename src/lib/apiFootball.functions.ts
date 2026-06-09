@@ -96,13 +96,29 @@ export const searchTeams = createServerFn({ method: "GET" })
     z.object({ q: z.string().min(2).max(50) }).parse(d),
   )
   .handler(async ({ data }) => {
-    const raw = await apiFetch<any[]>("/teams", { search: data.q });
-    const teams: DtoTeamSearch[] = raw.slice(0, 20).map((t) => ({
-      id: t.team.id,
-      name: t.team.name,
-      logo: t.team.logo,
-      country: t.team.country ?? "",
-    }));
+    const candidates = buildSearchCandidates(data.q).filter((c) => c.length >= 3);
+    const results = await Promise.all(
+      candidates.map((q) =>
+        apiFetch<any[]>("/teams", { search: q }).catch(() => [] as any[]),
+      ),
+    );
+    const seen = new Set<number>();
+    const teams: DtoTeamSearch[] = [];
+    for (const raw of results) {
+      for (const t of raw) {
+        const id = t.team?.id;
+        if (!id || seen.has(id)) continue;
+        seen.add(id);
+        teams.push({
+          id,
+          name: t.team.name,
+          logo: t.team.logo,
+          country: t.team.country ?? "",
+        });
+        if (teams.length >= 20) break;
+      }
+      if (teams.length >= 20) break;
+    }
     return { teams };
   });
 
