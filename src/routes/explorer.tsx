@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { Search, ChevronRight, ArrowLeft } from "lucide-react";
+import { Search, ChevronRight, ArrowLeft, X } from "lucide-react";
 import { BottomNav } from "@/components/skoup/BottomNav";
 import { TeamLogo } from "@/components/skoup/TeamLogo";
 import { MatchCard } from "@/components/skoup/MatchCard";
@@ -85,6 +85,14 @@ function ExplorerPage() {
     });
   };
 
+  const removeRecent = (id: number) => {
+    setRecent((prev) => {
+      const next = prev.filter((p) => p.id !== id);
+      saveRecent(next);
+      return next;
+    });
+  };
+
   const clearRecent = () => {
     setRecent([]);
     saveRecent([]);
@@ -135,6 +143,16 @@ function ExplorerPage() {
             className="flex-1 bg-transparent outline-none placeholder:text-[#475569]"
             style={{ fontSize: 14, color: "#E2E8F0", caretColor: "#E8622A" }}
           />
+          {query.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setQuery("")}
+              className="flex items-center justify-center"
+              style={{ marginLeft: 4 }}
+            >
+              <X size={16} color="#475569" />
+            </button>
+          )}
         </div>
       </div>
 
@@ -160,7 +178,7 @@ function ExplorerPage() {
                 Effacer
               </button>
             </div>
-            <Suggestions items={recent} query="" onSelect={handleSelect} />
+            <Suggestions items={recent} query="" onSelect={handleSelect} onRemove={removeRecent} />
           </div>
         )}
         {showSuggestions && isFetching && (
@@ -184,10 +202,12 @@ function Suggestions({
   items,
   query,
   onSelect,
+  onRemove,
 }: {
   items: DtoTeamSearch[];
   query: string;
   onSelect: (t: DtoTeamSearch) => void;
+  onRemove?: (id: number) => void;
 }) {
   if (items.length === 0) {
     return (
@@ -207,22 +227,36 @@ function Suggestions({
       }}
     >
       {items.map((t, i) => (
-        <button
+        <div
           key={t.id}
-          type="button"
-          onClick={() => onSelect(t)}
-          className="flex w-full items-center gap-3 px-3 py-3 text-left active:bg-white/5"
+          className="flex w-full items-center gap-3 px-3 py-3"
           style={{ borderTop: i === 0 ? "none" : "0.5px solid #1E3A5F" }}
         >
-          <TeamLogo src={t.logo} name={t.name} size={32} rounded={6} />
-          <div className="flex flex-1 flex-col">
-            <span style={{ fontSize: 13, color: "#FFFFFF" }} className="font-bold">
-              {highlight(t.name, query)}
-            </span>
-            <span style={{ fontSize: 11, color: "#64748B" }}>{t.country}</span>
-          </div>
-          <ChevronRight size={16} color="#475569" />
-        </button>
+          <button
+            type="button"
+            onClick={() => onSelect(t)}
+            className="flex flex-1 items-center gap-3 text-left active:bg-white/5"
+          >
+            <TeamLogo src={t.logo} name={t.name} size={32} rounded={6} />
+            <div className="flex flex-1 flex-col">
+              <span style={{ fontSize: 13, color: "#FFFFFF" }} className="font-bold">
+                {highlight(t.name, query)}
+              </span>
+              <span style={{ fontSize: 11, color: "#64748B" }}>{t.country}</span>
+            </div>
+            <ChevronRight size={16} color="#475569" />
+          </button>
+          {onRemove && (
+            <button
+              type="button"
+              onClick={() => onRemove(t.id)}
+              className="flex items-center justify-center active:opacity-60"
+              style={{ padding: 4 }}
+            >
+              <X size={16} color="#475569" />
+            </button>
+          )}
+        </div>
       ))}
     </div>
   );
