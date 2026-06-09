@@ -7,7 +7,6 @@ import { DayToggle, type DayKey } from "@/components/skoup/DayToggle";
 import { CompetitionSelector } from "@/components/skoup/CompetitionSelector";
 import { CompetitionSection } from "@/components/skoup/CompetitionSection";
 import { BottomNav } from "@/components/skoup/BottomNav";
-import { LEAGUES } from "@/lib/leagues";
 import { getFixtures } from "@/lib/apiFootball.functions";
 import { dateKey, dtoToMatch, isFinishedStatus, isLiveStatus } from "@/lib/matchMapping";
 import type { CompetitionGroup } from "@/data/matches";
@@ -25,11 +24,19 @@ export const Route = createFileRoute("/")({
   component: MatchesPage,
 });
 
-const ALLOWED_LEAGUE_IDS = new Set(LEAGUES.map((l) => l.id));
+
 
 function MatchesPage() {
   const [day, setDay] = useState<DayKey>("today");
   const [competition, setCompetition] = useState<string>("all");
+
+  const timezone = useMemo(() => {
+    try {
+      return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+    } catch {
+      return "UTC";
+    }
+  }, []);
 
   const date = useMemo(() => {
     const d = new Date();
@@ -44,18 +51,19 @@ function MatchesPage() {
   const fetchFixtures = useServerFn(getFixtures);
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["fixtures", date],
-    queryFn: () => fetchFixtures({ data: { date } }),
+    queryKey: ["fixtures", date, timezone],
+    queryFn: () => fetchFixtures({ data: { date, timezone } }),
     staleTime: 30_000,
     refetchInterval: 60_000,
   });
+
 
   const groups: CompetitionGroup[] = useMemo(() => {
     if (!data?.matches?.length) return [];
     const byLeague = new Map<number, CompetitionGroup>();
     for (const dto of data.matches) {
-      if (!ALLOWED_LEAGUE_IDS.has(dto.leagueId)) continue;
       if (day === "today" && (isFinishedStatus(dto.status) || isLiveStatus(dto.status))) continue;
+
       const key = dto.leagueId;
       if (!byLeague.has(key)) {
         byLeague.set(key, {

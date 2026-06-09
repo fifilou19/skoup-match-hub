@@ -72,6 +72,7 @@ export const getFixtures = createServerFn({ method: "GET" })
         date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
         leagueId: z.number().int().positive().optional(),
         season: z.number().int().optional(),
+        timezone: z.string().min(1).max(64).optional(),
       })
       .parse(d),
   )
@@ -79,6 +80,7 @@ export const getFixtures = createServerFn({ method: "GET" })
     const params: Record<string, string | number> = { date: data.date };
     if (data.leagueId) params.league = data.leagueId;
     if (data.season) params.season = data.season;
+    if (data.timezone) params.timezone = data.timezone;
     const raw = await apiFetch<any[]>("/fixtures", params);
     const matches: DtoMatch[] = raw.map(mapFixture);
     return { matches };
