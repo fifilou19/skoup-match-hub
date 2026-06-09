@@ -5,7 +5,7 @@ export function TopBar() {
     <header className="flex items-center justify-between px-4 py-3">
       <h1
         className="font-display font-bold text-white"
-        style={{ fontSize: 18, letterSpacing: "2px" }}
+        style={{ fontSize: 22, letterSpacing: "2px" }}
       >
         SKOUP
       </h1>
