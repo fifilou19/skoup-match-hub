@@ -1,10 +1,13 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { Search, Clock, ChevronRight, ArrowLeft } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
+import { Search, ChevronRight, ArrowLeft } from "lucide-react";
 import { BottomNav } from "@/components/skoup/BottomNav";
 import { TeamLogo } from "@/components/skoup/TeamLogo";
 import { MatchCard } from "@/components/skoup/MatchCard";
-import { recentSearches, searchTeams, getTeam, type TeamSearchItem } from "@/data/teams";
+import { searchTeams, getTeamNextFixtures, type DtoTeamSearch } from "@/lib/apiFootball.functions";
+import { dtoToMatch } from "@/lib/matchMapping";
 
 export const Route = createFileRoute("/explorer")({
   head: () => ({
@@ -12,10 +15,7 @@ export const Route = createFileRoute("/explorer")({
       { title: "SKOUP — Explorer" },
       { name: "description", content: "Recherchez une équipe et découvrez ses prochains matchs." },
       { property: "og:title", content: "SKOUP — Explorer" },
-      {
-        property: "og:description",
-        content: "Recherchez une équipe et découvrez ses prochains matchs.",
-      },
+      { property: "og:description", content: "Recherchez une équipe et découvrez ses prochains matchs." },
     ],
   }),
   component: ExplorerPage,
@@ -33,25 +33,38 @@ function highlight(name: string, query: string) {
   );
 }
 
+function useDebounced<T>(value: T, ms = 350): T {
+  const [v, setV] = useState(value);
+  useEffect(() => {
+    const id = setTimeout(() => setV(value), ms);
+    return () => clearTimeout(id);
+  }, [value, ms]);
+  return v;
+}
+
 function ExplorerPage() {
   const [query, setQuery] = useState("");
   const [focused, setFocused] = useState(false);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selected, setSelected] = useState<DtoTeamSearch | null>(null);
 
-  const suggestions = useMemo(() => searchTeams(query), [query]);
-  const selected = selectedId ? getTeam(selectedId) : null;
+  const debounced = useDebounced(query.trim(), 400);
+  const fetchSearch = useServerFn(searchTeams);
+
+  const { data, isFetching } = useQuery({
+    queryKey: ["teamSearch", debounced],
+    queryFn: () => fetchSearch({ data: { q: debounced } }),
+    enabled: debounced.length >= 3 && !selected,
+    staleTime: 5 * 60_000,
+  });
 
   if (selected) {
-    return <TeamResults team={selected} onBack={() => setSelectedId(null)} />;
+    return <TeamResults team={selected} onBack={() => setSelected(null)} />;
   }
 
-  const showSuggestions = query.trim().length >= 2;
+  const showSuggestions = debounced.length >= 3;
 
   return (
-    <div
-      className="min-h-screen font-sans text-[#E2E8F0]"
-      style={{ backgroundColor: "#0F172A" }}
-    >
+    <div className="min-h-screen font-sans text-[#E2E8F0]" style={{ backgroundColor: "#0F172A" }}>
       <header className="flex items-center px-4 py-3">
         <h1 className="font-display font-bold text-white" style={{ fontSize: 18 }}>
           Explorer
@@ -83,14 +96,20 @@ function ExplorerPage() {
       </div>
 
       <main className="pb-24" style={{ marginTop: 20 }}>
-        {showSuggestions ? (
+        {!showSuggestions && (
+          <p style={{ fontSize: 13, color: "#64748B", margin: "0 16px" }}>
+            Tapez au moins 3 lettres pour rechercher une équipe.
+          </p>
+        )}
+        {showSuggestions && isFetching && (
+          <p style={{ fontSize: 13, color: "#64748B", margin: "0 16px" }}>Recherche…</p>
+        )}
+        {showSuggestions && !isFetching && (
           <Suggestions
-            items={suggestions}
-            query={query}
-            onSelect={(t) => setSelectedId(t.id)}
+            items={data?.teams ?? []}
+            query={debounced}
+            onSelect={(t) => setSelected(t)}
           />
-        ) : (
-          <RecentList onSelect={(t) => setSelectedId(t.id)} />
         )}
       </main>
 
@@ -99,56 +118,14 @@ function ExplorerPage() {
   );
 }
 
-function RecentList({ onSelect }: { onSelect: (t: TeamSearchItem) => void }) {
-  return (
-    <section>
-      <h2
-        style={{
-          fontSize: 11,
-          color: "#475569",
-          letterSpacing: "0.05em",
-          margin: "0 16px 8px",
-        }}
-        className="uppercase"
-      >
-        Récents
-      </h2>
-      <div style={{ margin: "0 16px" }}>
-        {recentSearches.map((t, i) => (
-          <button
-            key={t.id}
-            type="button"
-            onClick={() => onSelect(t)}
-            className="flex w-full items-center gap-3 py-3 text-left active:opacity-70"
-            style={{
-              borderTop: i === 0 ? "none" : "0.5px solid #1E3A5F",
-            }}
-          >
-            <TeamLogo src={t.logo} name={t.name} size={32} rounded={6} />
-            <div className="flex flex-1 flex-col">
-              <span style={{ fontSize: 13, color: "#E2E8F0" }} className="font-medium">
-                {t.name}
-              </span>
-              <span style={{ fontSize: 11, color: "#64748B" }}>
-                {t.competition} — {t.country}
-              </span>
-            </div>
-            <Clock size={14} color="#475569" />
-          </button>
-        ))}
-      </div>
-    </section>
-  );
-}
-
 function Suggestions({
   items,
   query,
   onSelect,
 }: {
-  items: TeamSearchItem[];
+  items: DtoTeamSearch[];
   query: string;
-  onSelect: (t: TeamSearchItem) => void;
+  onSelect: (t: DtoTeamSearch) => void;
 }) {
   if (items.length === 0) {
     return (
@@ -173,18 +150,14 @@ function Suggestions({
           type="button"
           onClick={() => onSelect(t)}
           className="flex w-full items-center gap-3 px-3 py-3 text-left active:bg-white/5"
-          style={{
-            borderTop: i === 0 ? "none" : "0.5px solid #1E3A5F",
-          }}
+          style={{ borderTop: i === 0 ? "none" : "0.5px solid #1E3A5F" }}
         >
           <TeamLogo src={t.logo} name={t.name} size={32} rounded={6} />
           <div className="flex flex-1 flex-col">
             <span style={{ fontSize: 13, color: "#FFFFFF" }} className="font-bold">
               {highlight(t.name, query)}
             </span>
-            <span style={{ fontSize: 11, color: "#64748B" }}>
-              {t.competition} — {t.country}
-            </span>
+            <span style={{ fontSize: 11, color: "#64748B" }}>{t.country}</span>
           </div>
           <ChevronRight size={16} color="#475569" />
         </button>
@@ -193,13 +166,17 @@ function Suggestions({
   );
 }
 
-function TeamResults({ team, onBack }: { team: TeamSearchItem; onBack: () => void }) {
-  const matches = team.upcoming ?? [];
+function TeamResults({ team, onBack }: { team: DtoTeamSearch; onBack: () => void }) {
+  const fetchNext = useServerFn(getTeamNextFixtures);
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["teamNext", team.id],
+    queryFn: () => fetchNext({ data: { teamId: team.id, next: 10 } }),
+    staleTime: 5 * 60_000,
+  });
+  const matches = useMemo(() => (data?.matches ?? []).map(dtoToMatch), [data]);
+
   return (
-    <div
-      className="min-h-screen font-sans text-[#E2E8F0]"
-      style={{ backgroundColor: "#0F172A" }}
-    >
+    <div className="min-h-screen font-sans text-[#E2E8F0]" style={{ backgroundColor: "#0F172A" }}>
       <header className="flex items-center gap-3 px-4 py-3">
         <button
           type="button"
@@ -214,29 +191,33 @@ function TeamResults({ team, onBack }: { team: TeamSearchItem; onBack: () => voi
           <h1 className="font-display font-bold text-white" style={{ fontSize: 18 }}>
             {team.name}
           </h1>
-          <span style={{ fontSize: 12, color: "#64748B" }}>{team.competition}</span>
+          <span style={{ fontSize: 12, color: "#64748B" }}>{team.country}</span>
         </div>
       </header>
 
       <main className="pb-24" style={{ marginTop: 12 }}>
         <h2
-          style={{
-            fontSize: 12,
-            color: "#475569",
-            letterSpacing: "0.05em",
-            margin: "0 16px 8px",
-          }}
+          style={{ fontSize: 12, color: "#475569", letterSpacing: "0.05em", margin: "0 16px 8px" }}
           className="uppercase"
         >
           Prochains matchs
         </h2>
-        {matches.length === 0 ? (
+        {isLoading && (
+          <p style={{ fontSize: 13, color: "#64748B", margin: "0 16px" }}>Chargement…</p>
+        )}
+        {isError && (
+          <p style={{ fontSize: 13, color: "#EF4444", margin: "0 16px" }}>
+            Erreur de chargement.
+          </p>
+        )}
+        {!isLoading && !isError && matches.length === 0 && (
           <p style={{ fontSize: 13, color: "#64748B", margin: "0 16px" }}>
             Aucun match programmé.
           </p>
-        ) : (
-          matches.map((m) => <MatchCard key={m.id} match={m} />)
         )}
+        {matches.map((m) => (
+          <MatchCard key={m.id} match={m} />
+        ))}
       </main>
 
       <BottomNav active="search" />
