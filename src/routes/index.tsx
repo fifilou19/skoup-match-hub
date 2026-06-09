@@ -73,7 +73,7 @@ function MatchesPage() {
     return Array.from(byLeague.values()).sort((a, b) =>
       a.competition.name.localeCompare(b.competition.name),
     );
-  }, [data]);
+  }, [data, day]);
 
   const competitions = useMemo(() => groups.map((g) => g.competition), [groups]);
 
