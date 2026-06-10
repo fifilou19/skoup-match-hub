@@ -127,10 +127,10 @@ function getProfile(axe1: number, axe2: number): string {
 
 function getEventsForProfile(profile: string): string[] {
   const events: Record<string, string[]> = {
-    P1: ['total_buts_over', 'btts', 'corners_total', 'tentatives'],
-    P2: ['total_buts_under', 'cartons', 'fautes', 'nul'],
-    P3: ['victoire_favori', 'total_buts_over', 'corners_favori', 'tentatives_favori'],
-    P4: ['victoire_favori', 'total_buts_under', 'corners_favori', 'cartons_outsider'],
+    P1: ['total_buts_over', 'btts', 'corners_total', 'buts_mt2'],
+    P2: ['total_buts_under', 'cartons', 'nul', 'buts_mt1'],
+    P3: ['victoire_favori', 'total_buts_over', 'corners_favori', 'btts'],
+    P4: ['victoire_favori', 'total_buts_under', 'corners_favori', 'cartons'],
     P5: ['cartons', 'buts_mt1', 'buts_mt2', 'victoire_motive']
   }
   return events[profile] || events['P1']
