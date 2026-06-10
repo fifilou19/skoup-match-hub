@@ -29,7 +29,20 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     )
 
-    // No early return here — we check after generating context, before writing
+    // Already generated?
+    const { data: existing } = await supabase
+      .from('analyses')
+      .select('context_text')
+      .eq('match_id', match_id)
+      .maybeSingle()
+
+    if (existing?.context_text) {
+      return new Response(
+        JSON.stringify({ context_text: existing.context_text }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
 
 
     const apiKey = Deno.env.get('API_FOOTBALL_KEY')
