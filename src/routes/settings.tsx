@@ -77,14 +77,14 @@ function SettingsPage() {
               KM
             </span>
           </div>
-          <div className="ml-3 flex flex-col flex-1 min-w-0">
-            <span className="truncate" style={{ fontSize: 14, color: "#FFFFFF", fontWeight: 500 }}>
+          <div className="ml-3 flex flex-col flex-1">
+            <span style={{ fontSize: 14, color: "#FFFFFF", fontWeight: 500 }}>
               Kofi Mensah
             </span>
-            <span className="truncate" style={{ fontSize: 12, color: "#64748B" }}>kofi.mensah@gmail.com</span>
-            <span className="truncate" style={{ fontSize: 11, color: "#475569" }}>🇨🇮 Côte d'Ivoire</span>
+            <span style={{ fontSize: 12, color: "#64748B" }}>kofi.mensah@gmail.com</span>
+            <span style={{ fontSize: 11, color: "#475569" }}>🇨🇮 Côte d'Ivoire</span>
           </div>
-          <ChevronRight size={16} color="#475569" className="ml-2 shrink-0" />
+          <ChevronRight size={16} color="#475569" />
         </button>
 
         {/* Subscription — FREE */}
