@@ -166,6 +166,11 @@ function MatchDetail() {
   };
 
   const handleAnalyze = async () => {
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData.session) {
+      toast.error("Connecte-toi pour lancer une analyse.");
+      return;
+    }
     setAnalyzing(true);
     try {
       const { data: res, error } = await supabase.functions.invoke(
