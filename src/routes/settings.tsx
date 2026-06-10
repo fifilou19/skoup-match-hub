@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Share2, HelpCircle, LogOut, ChevronRight } from "lucide-react";
 import { BottomNav } from "@/components/skoup/BottomNav";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
