@@ -14,6 +14,125 @@ export type Database = {
   }
   public: {
     Tables: {
+      analyses: {
+        Row: {
+          confidence: string
+          context_text: string
+          created_at: string | null
+          has_press_conference: boolean | null
+          id: string
+          match_id: string
+          profile_code: string
+          profile_label: string
+          scenario_label: string
+          scenario_text: string
+          score_axe1: number
+          score_axe2: number
+        }
+        Insert: {
+          confidence: string
+          context_text: string
+          created_at?: string | null
+          has_press_conference?: boolean | null
+          id?: string
+          match_id: string
+          profile_code: string
+          profile_label: string
+          scenario_label: string
+          scenario_text: string
+          score_axe1: number
+          score_axe2: number
+        }
+        Update: {
+          confidence?: string
+          context_text?: string
+          created_at?: string | null
+          has_press_conference?: boolean | null
+          id?: string
+          match_id?: string
+          profile_code?: string
+          profile_label?: string
+          scenario_label?: string
+          scenario_text?: string
+          score_axe1?: number
+          score_axe2?: number
+        }
+        Relationships: []
+      }
+      daily_quota: {
+        Row: {
+          count: number | null
+          id: string
+          quota_date: string
+          user_id: string
+        }
+        Insert: {
+          count?: number | null
+          id?: string
+          quota_date?: string
+          user_id: string
+        }
+        Update: {
+          count?: number | null
+          id?: string
+          quota_date?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      predictions: {
+        Row: {
+          analysis_id: string | null
+          created_at: string | null
+          display_order: number
+          event_code: string
+          event_name: string
+          event_type: string
+          id: string
+          interval_text: string | null
+          match_id: string
+          probability: number
+          reasoning: string
+          threshold: string
+        }
+        Insert: {
+          analysis_id?: string | null
+          created_at?: string | null
+          display_order: number
+          event_code: string
+          event_name: string
+          event_type: string
+          id?: string
+          interval_text?: string | null
+          match_id: string
+          probability: number
+          reasoning: string
+          threshold: string
+        }
+        Update: {
+          analysis_id?: string | null
+          created_at?: string | null
+          display_order?: number
+          event_code?: string
+          event_name?: string
+          event_type?: string
+          id?: string
+          interval_text?: string | null
+          match_id?: string
+          probability?: number
+          reasoning?: string
+          threshold?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "predictions_analysis_id_fkey"
+            columns: ["analysis_id"]
+            isOneToOne: false
+            referencedRelation: "analyses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           country: string | null
@@ -38,6 +157,27 @@ export type Database = {
           phone?: string | null
           updated_at?: string
           username?: string
+        }
+        Relationships: []
+      }
+      watchlist: {
+        Row: {
+          created_at: string | null
+          id: string
+          match_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          match_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          match_id?: string
+          user_id?: string
         }
         Relationships: []
       }
