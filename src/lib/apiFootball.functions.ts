@@ -134,3 +134,14 @@ export const getTeamNextFixtures = createServerFn({ method: "GET" })
     const matches: DtoMatch[] = raw.map(mapFixture);
     return { matches };
   });
+
+// ------- Fixture by id -------
+export const getFixtureById = createServerFn({ method: "GET" })
+  .inputValidator((d) =>
+    z.object({ fixtureId: z.number().int().positive() }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    const raw = await apiFetch<any[]>("/fixtures", { id: data.fixtureId });
+    if (!raw || raw.length === 0) return { match: null };
+    return { match: mapFixture(raw[0]) };
+  });
