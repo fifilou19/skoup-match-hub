@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Share2, HelpCircle, LogOut, ChevronRight } from "lucide-react";
 import { BottomNav } from "@/components/skoup/BottomNav";
 
