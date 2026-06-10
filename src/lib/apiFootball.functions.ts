@@ -66,7 +66,6 @@ function mapFixture(f: any): DtoMatch {
 
 // ------- Fixtures by league + date -------
 export const getFixtures = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
   .inputValidator((d) =>
     z
       .object({
@@ -95,7 +94,6 @@ export interface DtoTeamSearch {
   country: string;
 }
 export const searchTeams = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
   .inputValidator((d) =>
     z.object({ q: z.string().min(2).max(50) }).parse(d),
   )
@@ -128,7 +126,6 @@ export const searchTeams = createServerFn({ method: "GET" })
 
 // ------- Team upcoming fixtures -------
 export const getTeamNextFixtures = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
   .inputValidator((d) =>
     z.object({ teamId: z.number().int().positive(), next: z.number().int().min(1).max(20).default(10) }).parse(d),
   )
