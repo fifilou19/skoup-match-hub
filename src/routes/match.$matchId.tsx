@@ -257,6 +257,7 @@ function MatchDetail() {
         event_type: p.event_type,
         interval_text: p.interval_text,
         reasoning: p.reasoning,
+        probability: typeof p.probability === "number" ? p.probability : null,
       }));
       const next: StoredAnalysis = {
         profile_label: payload.profile_label,
