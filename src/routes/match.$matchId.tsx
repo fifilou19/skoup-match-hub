@@ -227,8 +227,9 @@ function MatchDetail() {
               onClick={() => setWatched((w) => !w)}
               aria-label="Ajouter à la watchlist"
               className="flex h-9 w-9 items-center justify-center rounded-full active:bg-white/5"
+              style={{ border: "1px solid #2D4A6B" }}
             >
-              <Eye size={20} color={watched ? "#E8622A" : "#94A3B8"} />
+              <Eye size={26} color={watched ? "#E8622A" : "#94A3B8"} />
             </button>
           )}
         </div>
@@ -320,12 +321,12 @@ function MatchDetail() {
 
         {!isFinished && (
           <div
-            className="flex flex-col items-center px-4 pb-4 pt-3"
+            className="flex flex-col items-center px-4 pb-3 pt-2"
             style={{ borderTop: "0.5px solid #1E3A5F" }}
           >
             {upcomingMock.pressConfAvailable ? (
               <div
-                className="mt-3 inline-flex items-center gap-2"
+                className="mt-2 inline-flex items-center gap-2"
                 style={{
                   backgroundColor: "#0F2E1A",
                   border: "0.5px solid #22C55E",
@@ -341,16 +342,16 @@ function MatchDetail() {
             ) : (
               <>
                 <div
-                  className="mt-3 inline-flex items-center gap-2"
+                  className="mt-2 inline-flex items-center gap-2"
                   style={{
                     backgroundColor: "#2D1F0A",
                     border: "0.5px solid #EF9F27",
                     borderRadius: 8,
-                    padding: "6px 14px",
+                    padding: "5px 10px",
                   }}
                 >
                   <AlertTriangle size={14} color="#EF9F27" />
-                  <span style={{ fontSize: 12, color: "#EF9F27" }}>
+                  <span style={{ fontSize: 11, color: "#EF9F27" }}>
                     Conf. de presse non disponibles
                   </span>
                 </div>
@@ -359,7 +360,7 @@ function MatchDetail() {
                   style={{
                     fontSize: 10,
                     color: "#EF9F27",
-                    marginTop: 6,
+                    marginTop: 4,
                     maxWidth: 280,
                   }}
                 >
