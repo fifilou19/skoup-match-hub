@@ -337,11 +337,17 @@ function MatchDetail() {
         probability: typeof p.probability === "number" ? p.probability : null,
       }));
       const next: StoredAnalysis = {
+        profile_code: payload.profile_code,
         profile_label: payload.profile_label,
+        scenario_label: payload.scenario_label,
         scenario_text: payload.scenario_text,
         context_text: payload.context_text || contextText || "",
+        confidence: payload.confidence,
+        score_axe1: payload.score_axe1,
+        score_axe2: payload.score_axe2,
         predictions,
       };
+
       saveStoredAnalysis(matchId, next);
       setStored(next);
       if (payload.context_text) setContextText(payload.context_text);
