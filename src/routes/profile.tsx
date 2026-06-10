@@ -137,9 +137,9 @@ function ProfilePage() {
         >
           <EditableField label="Nom d'utilisateur" value={name} onSave={setName} />
           <Divider />
-          <EditableField label="Email" value={email} onSave={setEmail} type="email" />
+          <EditableField label="Email" value={email} onSave={setEmail} type="email" editable={false} />
           <Divider />
-          <EditableField label="Téléphone" value={phone} onSave={setPhone} type="tel" />
+          <EditableField label="Téléphone" value={phone} onSave={setPhone} type="tel" editable={false} />
         </section>
 
         <h2
