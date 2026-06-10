@@ -161,21 +161,25 @@ function SettingsPage() {
           </span>
           <p style={{ fontSize: 13, color: "#FFFFFF", marginTop: 4 }}>Plan gratuit</p>
           <p style={{ fontSize: 12, color: "#64748B", marginTop: 4 }}>
-            2 / 3 analyses utilisées aujourd'hui
+            {isAuthed
+              ? `${quotaUsed} / ${quotaMax} analyses utilisées aujourd'hui`
+              : "Connecte-toi pour suivre tes analyses"}
           </p>
-          <div className="mt-2 flex items-center gap-1">
-            {[0, 1, 2].map((i) => (
-              <span
-                key={i}
-                style={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: 999,
-                  backgroundColor: i < 2 ? "#E8622A" : "#1E3A5F",
-                }}
-              />
-            ))}
-          </div>
+          {isAuthed && (
+            <div className="mt-2 flex items-center gap-1">
+              {Array.from({ length: quotaMax }).map((_, i) => (
+                <span
+                  key={i}
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: 999,
+                    backgroundColor: i < quotaUsed ? "#E8622A" : "#1E3A5F",
+                  }}
+                />
+              ))}
+            </div>
+          )}
           <button
             type="button"
             onClick={() => setShowPlans(true)}
