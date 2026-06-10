@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { buildSearchCandidates } from "./teamAliases";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const API_BASE = "https://v3.football.api-sports.io";
 
