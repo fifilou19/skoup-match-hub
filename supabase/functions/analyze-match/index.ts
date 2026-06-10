@@ -338,28 +338,58 @@ Deno.serve(async (req) => {
     const homeId = fixture.teams.home.id
     const awayId = fixture.teams.away.id
 
-    const [homeStatsRes, awayStatsRes, h2hRes] = await Promise.all([
+    const [homeStatsRes, awayStatsRes, h2hRes, homeRecentRes, awayRecentRes] = await Promise.all([
       fetch(`https://v3.football.api-sports.io/teams/statistics?season=${season}&team=${homeId}&league=${leagueId}`,
         { headers: { 'x-rapidapi-key': apiKey!, 'x-rapidapi-host': 'v3.football.api-sports.io' } }),
       fetch(`https://v3.football.api-sports.io/teams/statistics?season=${season}&team=${awayId}&league=${leagueId}`,
         { headers: { 'x-rapidapi-key': apiKey!, 'x-rapidapi-host': 'v3.football.api-sports.io' } }),
       fetch(`https://v3.football.api-sports.io/fixtures/headtohead?h2h=${homeId}-${awayId}&last=5`,
-        { headers: { 'x-rapidapi-key': apiKey!, 'x-rapidapi-host': 'v3.football.api-sports.io' } })
+        { headers: { 'x-rapidapi-key': apiKey!, 'x-rapidapi-host': 'v3.football.api-sports.io' } }),
+      fetch(`https://v3.football.api-sports.io/fixtures?team=${homeId}&last=10&season=${season}`,
+        { headers: { 'x-rapidapi-key': apiKey!, 'x-rapidapi-host': 'v3.football.api-sports.io' } }),
+      fetch(`https://v3.football.api-sports.io/fixtures?team=${awayId}&last=10&season=${season}`,
+        { headers: { 'x-rapidapi-key': apiKey!, 'x-rapidapi-host': 'v3.football.api-sports.io' } }),
     ])
 
     const homeStats = await homeStatsRes.json()
     const awayStats = await awayStatsRes.json()
     const h2hData = await h2hRes.json()
+    const homeRecent = await homeRecentRes.json()
+    const awayRecent = await awayRecentRes.json()
 
     const homeS = homeStats.response || {}
     const awayS = awayStats.response || {}
 
+    // Fetch corner stats per recent fixture in parallel
+    async function avgCorners(fixtures: any[], teamId: number, fallback: number): Promise<number> {
+      const ids = (fixtures || []).slice(0, 10).map((f: any) => f.fixture?.id).filter(Boolean)
+      if (ids.length === 0) return fallback
+      const results = await Promise.all(ids.map((id: number) =>
+        fetch(`https://v3.football.api-sports.io/fixtures/statistics?fixture=${id}&team=${teamId}`,
+          { headers: { 'x-rapidapi-key': apiKey!, 'x-rapidapi-host': 'v3.football.api-sports.io' } })
+          .then(r => r.json()).catch(() => null)
+      ))
+      const values: number[] = []
+      for (const r of results) {
+        const stat = r?.response?.[0]?.statistics?.find((s: any) => s.type === 'Corner Kicks')
+        const v = typeof stat?.value === 'number' ? stat.value : parseInt(stat?.value, 10)
+        if (Number.isFinite(v)) values.push(v)
+      }
+      if (values.length === 0) return fallback
+      return values.reduce((a, b) => a + b, 0) / values.length
+    }
+
+    const [homeCornersAvg, awayCornersAvg] = await Promise.all([
+      avgCorners(homeRecent.response, homeId, 5.5),
+      avgCorners(awayRecent.response, awayId, 4.5),
+    ])
+
     const stats = {
       home: {
         name: fixture.teams.home.name,
-        goals_avg: parseFloat(homeS.goals?.for?.average?.home || '1.3'),
-        xg_avg: parseFloat(homeS.goals?.for?.average?.home || '1.3'),
-        corners_avg: 5.5,
+        goals_avg: parseFloat(homeS.goals?.for?.average?.total || '1.3'),
+        xg_avg: parseFloat(homeS.goals?.for?.average?.total || '1.3'),
+        corners_avg: homeCornersAvg,
         cards_avg: (homeS.cards?.yellow?.total || 40) /
           Math.max(homeS.fixtures?.played?.home || 10, 1),
         ppda: 11,
@@ -371,9 +401,9 @@ Deno.serve(async (req) => {
       },
       away: {
         name: fixture.teams.away.name,
-        goals_avg: parseFloat(awayS.goals?.for?.average?.away || '1.0'),
-        xg_avg: parseFloat(awayS.goals?.for?.average?.away || '1.0'),
-        corners_avg: 4.5,
+        goals_avg: parseFloat(awayS.goals?.for?.average?.total || '1.0'),
+        xg_avg: parseFloat(awayS.goals?.for?.average?.total || '1.0'),
+        corners_avg: awayCornersAvg,
         cards_avg: (awayS.cards?.yellow?.total || 38) /
           Math.max(awayS.fixtures?.played?.away || 10, 1),
         ppda: 12,
@@ -381,6 +411,7 @@ Deno.serve(async (req) => {
           Math.max(awayS.fixtures?.played?.away || 10, 1) * 100,
         key_absences: 0
       },
+
       h2h_wins: h2hData.response?.filter(
         (m: any) => m.teams.home.winner === true &&
           m.teams.home.id === homeId
@@ -426,7 +457,7 @@ Retourne ce JSON exact :
   "scenario_label": "${profileLabels[profile]}",
   "scenario_text": "Description de la physionomie attendue du match en 2-3 phrases. Qu'est-ce qu'on attend comme type de match ?",
   "predictions_reasoning": {
-    ${predictions.map(p => `"${p.event_code}": "Explication courte en 2 phrases pourquoi cet événement est porteur pour ce match."`).join(',\n    ')}
+    ${predictions.map(p => `"${p.event_code}": "Pour le match ${fixture.teams.home.name} vs ${fixture.teams.away.name} avec le profil ${profileLabels[profile]}, explique en 2 phrases pourquoi l'événement '${p.event_name} ${p.threshold}' est porteur pour CE match spécifiquement. Utilise les stats réelles : buts moyens domicile ${stats.home.goals_avg.toFixed(2)}, buts moyens extérieur ${stats.away.goals_avg.toFixed(2)}, corners domicile ${stats.home.corners_avg.toFixed(1)}, corners extérieur ${stats.away.corners_avg.toFixed(1)}."`).join(',\n    ')}
   }
 }`
 
