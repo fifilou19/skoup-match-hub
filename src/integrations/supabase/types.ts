@@ -166,18 +166,48 @@ export type Database = {
           id: string
           match_id: string
           user_id: string
+          home_name: string | null
+          away_name: string | null
+          home_logo: string | null
+          away_logo: string | null
+          competition_name: string | null
+          competition_logo: string | null
+          kickoff_at: string | null
+          status: string | null
+          score_home: number | null
+          score_away: number | null
         }
         Insert: {
           created_at?: string | null
           id?: string
           match_id: string
           user_id: string
+          home_name?: string | null
+          away_name?: string | null
+          home_logo?: string | null
+          away_logo?: string | null
+          competition_name?: string | null
+          competition_logo?: string | null
+          kickoff_at?: string | null
+          status?: string | null
+          score_home?: number | null
+          score_away?: number | null
         }
         Update: {
           created_at?: string | null
           id?: string
           match_id?: string
           user_id?: string
+          home_name?: string | null
+          away_name?: string | null
+          home_logo?: string | null
+          away_logo?: string | null
+          competition_name?: string | null
+          competition_logo?: string | null
+          kickoff_at?: string | null
+          status?: string | null
+          score_home?: number | null
+          score_away?: number | null
         }
         Relationships: []
       }
