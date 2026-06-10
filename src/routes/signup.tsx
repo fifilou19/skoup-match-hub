@@ -310,9 +310,6 @@ function SignupPage() {
           {loading ? "Création…" : "Créer mon compte"}
         </button>
 
-        <p style={{ fontSize: 11, color: "#475569", textAlign: "center", fontStyle: "italic", marginTop: 4 }}>
-          Tu pourras ajouter ton email ou numéro manquant depuis ton profil.
-        </p>
 
         <p style={{ textAlign: "center", fontSize: 13, color: "#94A3B8", marginTop: 12, paddingBottom: 32 }}>
           Déjà un compte ?{" "}
