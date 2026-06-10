@@ -129,6 +129,7 @@ export const searchTeams = createServerFn({ method: "GET" })
 
 // ------- Team upcoming fixtures -------
 export const getTeamNextFixtures = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d) =>
     z.object({ teamId: z.number().int().positive(), next: z.number().int().min(1).max(20).default(10) }).parse(d),
   )
