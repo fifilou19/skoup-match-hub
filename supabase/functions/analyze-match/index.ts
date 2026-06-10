@@ -7,6 +7,10 @@ const corsHeaders = {
     'authorization, x-client-info, apikey, content-type',
 }
 
+const GENERIC_ERROR = 'Analysis temporarily unavailable. Please try again.'
+const UNAUTHORIZED_ERROR = 'Unauthorized. Please sign in to analyze matches.'
+const QUOTA_ERROR = 'Daily analysis quota exceeded. Please try again tomorrow.'
+
 // Appel OpenRouter
 async function callLLM(prompt: string, systemPrompt: string) {
   const response = await fetch(
@@ -234,25 +238,76 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { match_id } = await req.json()
-
-    if (!match_id) {
+    // 1. Authentication — verify Supabase JWT
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
       return new Response(
-        JSON.stringify({ error: 'match_id requis' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: UNAUTHORIZED_ERROR }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL')!,
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!
+    const supabaseAuthClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    })
+
+    const { data: { user }, error: authError } = await supabaseAuthClient.auth.getUser()
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: UNAUTHORIZED_ERROR }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+    const userId = user.id
+
+    // 2. Input validation — match_id must be a positive integer
+    const body = await req.json()
+    const rawMatchId = body.match_id
+    if (!rawMatchId) {
+      return new Response(
+        JSON.stringify({ error: 'match_id is required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+    const numericId = parseInt(rawMatchId, 10)
+    if (!Number.isFinite(numericId) || numericId <= 0 || numericId.toString() !== rawMatchId.toString().trim()) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid match_id. Must be a positive integer.' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+    const match_id = numericId.toString()
+
+    // 3. Daily quota check
+    const today = new Date().toISOString().split('T')[0]
+    const supabaseAdmin = createClient(
+      supabaseUrl,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     )
 
-    // Cache : analyse existante
-    const { data: existing } = await supabase
+    const { data: quotaRow } = await supabaseAdmin
+      .from('daily_quota')
+      .select('count')
+      .eq('user_id', userId)
+      .eq('quota_date', today)
+      .maybeSingle()
+
+    const currentCount = quotaRow?.count || 0
+    const DAILY_LIMIT = 10
+    if (currentCount >= DAILY_LIMIT) {
+      return new Response(
+        JSON.stringify({ error: QUOTA_ERROR }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // 4. Cache : analyse existante
+    const { data: existing } = await supabaseAdmin
       .from('analyses')
       .select('*, predictions(*)')
-      .eq('match_id', match_id.toString())
+      .eq('match_id', match_id)
       .maybeSingle()
 
     if (existing) {
@@ -262,7 +317,7 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Récupérer le match
+    // 5. Récupérer le match
     const apiKey = Deno.env.get('API_FOOTBALL_KEY')
     const fixtureRes = await fetch(
       `https://v3.football.api-sports.io/fixtures?id=${match_id}`,
@@ -399,10 +454,10 @@ Retourne ce JSON exact :
       display_order: idx + 1
     }))
 
-    const { data: savedAnalysis, error: analysisError } = await supabase
+    const { data: savedAnalysis, error: analysisError } = await supabaseAdmin
       .from('analyses')
       .insert({
-        match_id: match_id.toString(),
+        match_id: match_id,
         profile_code: profile,
         profile_label: profileLabels[profile],
         score_axe1: scoreAxe1,
@@ -423,10 +478,10 @@ Retourne ce JSON exact :
     if (analysisError) throw analysisError
 
     if (enrichedPredictions.length > 0) {
-      await supabase.from('predictions').insert(
+      await supabaseAdmin.from('predictions').insert(
         enrichedPredictions.map(p => ({
           analysis_id: savedAnalysis.id,
-          match_id: match_id.toString(),
+          match_id: match_id,
           event_code: p.event_code,
           event_name: p.event_name,
           threshold: p.threshold,
@@ -437,6 +492,19 @@ Retourne ce JSON exact :
           display_order: p.display_order
         }))
       )
+    }
+
+    // 6. Increment daily quota
+    const { error: upsertError } = await supabaseAdmin
+      .from('daily_quota')
+      .upsert({
+        user_id: userId,
+        quota_date: today,
+        count: currentCount + 1
+      }, { onConflict: 'user_id,quota_date' })
+
+    if (upsertError) {
+      console.error('Quota upsert error:', upsertError)
     }
 
     const result = {
@@ -452,7 +520,7 @@ Retourne ce JSON exact :
   } catch (error) {
     console.error('analyze-match error:', error)
     return new Response(
-      JSON.stringify({ error: (error as Error).message }),
+      JSON.stringify({ error: GENERIC_ERROR }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
