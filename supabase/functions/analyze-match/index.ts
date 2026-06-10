@@ -672,7 +672,7 @@ Retourne UNIQUEMENT ce JSON valide :
 
     const { data: savedAnalysis, error: analysisError } = await supabaseAdmin
       .from('analyses')
-      .insert({
+      .upsert({
         match_id: match_id,
         profile_code: profile,
         profile_label: profileLabels[profile],
@@ -687,7 +687,7 @@ Retourne UNIQUEMENT ce JSON valide :
         scenario_label: llmData.scenario_label,
         scenario_text: llmData.scenario_text,
         has_press_conference: false
-      })
+      }, { onConflict: 'match_id' })
       .select()
       .single()
 
