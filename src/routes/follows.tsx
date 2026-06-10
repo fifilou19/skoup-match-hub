@@ -1,10 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Bookmark, Eye } from "lucide-react";
 import { BottomNav } from "@/components/skoup/BottomNav";
-import { MatchCard } from "@/components/skoup/MatchCard";
 import { TeamLogo } from "@/components/skoup/TeamLogo";
-import type { Match } from "@/data/matches";
 
 export const Route = createFileRoute("/follows")({
   head: () => ({
@@ -18,83 +16,123 @@ export const Route = createFileRoute("/follows")({
   component: FollowsPage,
 });
 
-interface LiveMatch {
+type MatchStatus = "upcoming" | "live" | "finished";
+
+interface FollowMatch {
   id: string;
   home: { name: string; logo: string };
   away: { name: string; logo: string };
   competition: string;
-  minute: string;
-  score: { home: number; away: number };
-  mainEvent: { label: string; current: number; threshold: number };
+  date: string; // ISO yyyy-mm-dd
+  time: string; // ex "15h00"
+  venue?: string;
+  status: MatchStatus;
+  scoreHome?: number;
+  scoreAway?: number;
+  minute?: string;
 }
 
-const initialLive: LiveMatch[] = [
+const DAY_NAMES_FULL = ["DIM", "LUN", "MAR", "MER", "JEU", "VEN", "SAM"];
+const MONTH_NAMES_FULL = [
+  "JAN",
+  "FÉV",
+  "MARS",
+  "AVR",
+  "MAI",
+  "JUIN",
+  "JUIL",
+  "AOÛT",
+  "SEPT",
+  "OCT",
+  "NOV",
+  "DÉC",
+];
+
+function pad(n: number) {
+  return n.toString().padStart(2, "0");
+}
+function todayKey(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+function offsetDateKey(days: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+function formatDateLabel(key: string): string {
+  const [y, m, d] = key.split("-").map(Number);
+  const dt = new Date(y, m - 1, d);
+  return `${DAY_NAMES_FULL[dt.getDay()]} ${dt.getDate()} ${MONTH_NAMES_FULL[dt.getMonth()]}`;
+}
+
+const TODAY = todayKey();
+const TOMORROW = offsetDateKey(1);
+
+const initialMatches: FollowMatch[] = [
   {
     id: "m3",
     home: { name: "Arsenal", logo: "https://media.api-sports.io/football/teams/42.png" },
     away: { name: "Chelsea", logo: "https://media.api-sports.io/football/teams/49.png" },
     competition: "Premier League",
+    date: TODAY,
+    time: "16h30",
+    status: "live",
+    scoreHome: 1,
+    scoreAway: 0,
     minute: "67",
-    score: { home: 1, away: 0 },
-    mainEvent: { label: "Corners Arsenal › 5.5", current: 3, threshold: 6 },
   },
-];
-
-const initialToday: Match[] = [
   {
     id: "m1",
     home: { name: "ASEC Mimosas", logo: "https://media.api-sports.io/football/teams/3722.png" },
     away: { name: "Africa Sports", logo: "https://media.api-sports.io/football/teams/3724.png" },
     competition: "Ligue Pro CI",
-    competitionLogo: "https://media.api-sports.io/football/leagues/99.png",
+    date: TODAY,
     time: "15h00",
     venue: "Stade FHB",
-    window: "conf",
-    inWatchlist: true,
+    status: "upcoming",
   },
-];
-
-const initialUpcoming: Match[] = [
+  {
+    id: "mfin1",
+    home: { name: "Real Madrid", logo: "https://media.api-sports.io/football/teams/541.png" },
+    away: { name: "FC Barcelone", logo: "https://media.api-sports.io/football/teams/529.png" },
+    competition: "Liga",
+    date: TODAY,
+    time: "21h00",
+    status: "finished",
+    scoreHome: 2,
+    scoreAway: 1,
+  },
   {
     id: "m10",
     home: { name: "Sénégal", logo: "https://media.api-sports.io/football/teams/536.png" },
     away: { name: "Maroc", logo: "https://media.api-sports.io/football/teams/489.png" },
     competition: "CAN 2026",
-    competitionLogo: "https://media.api-sports.io/football/leagues/6.png",
+    date: TOMORROW,
     time: "20h00",
     venue: "Stade Lat Dior",
-    window: "soon",
-    hoursUntil: 18,
-    inWatchlist: true,
+    status: "upcoming",
   },
   {
     id: "m12",
     home: { name: "Côte d'Ivoire", logo: "https://media.api-sports.io/football/teams/537.png" },
     away: { name: "Sénégal", logo: "https://media.api-sports.io/football/teams/536.png" },
     competition: "Amical",
-    competitionLogo: "https://media.api-sports.io/football/leagues/667.png",
+    date: offsetDateKey(5),
     time: "19h00",
     venue: "Stade FHB",
-    window: "far",
-    daysUntil: 5,
-    inWatchlist: true,
+    status: "upcoming",
   },
 ];
 
-function SectionLabel({ children, live = false }: { children: React.ReactNode; live?: boolean }) {
+function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex items-center gap-2 px-4 pt-4 pb-2">
-      {live && (
-        <span
-          className="inline-block animate-pulse"
-          style={{ width: 6, height: 6, borderRadius: 999, backgroundColor: "#EF4444" }}
-        />
-      )}
       <span
         className="uppercase"
         style={{
           fontSize: 10,
-          color: live ? "#EF4444" : "#475569",
+          color: "#475569",
           letterSpacing: "0.08em",
           fontWeight: 600,
         }}
@@ -105,90 +143,110 @@ function SectionLabel({ children, live = false }: { children: React.ReactNode; l
   );
 }
 
-function LiveCard({ match, onRemove }: { match: LiveMatch; onRemove: (id: string) => void }) {
+function FollowCard({
+  match,
+  onRemove,
+}: {
+  match: FollowMatch;
+  onRemove: (id: string) => void;
+}) {
   const navigate = useNavigate();
-  const target = (match.mainEvent.current / match.mainEvent.threshold) * 100;
-  const [width, setWidth] = useState(0);
+  const [leaving, setLeaving] = useState(false);
 
-  useEffect(() => {
-    const t = requestAnimationFrame(() => setWidth(target));
-    return () => cancelAnimationFrame(t);
-  }, [target]);
+  const handleRemove = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setLeaving(true);
+    setTimeout(() => onRemove(match.id), 200);
+  };
+
+  const onCardClick = () => {
+    navigate({ to: "/match/$matchId", params: { matchId: match.id } });
+  };
+
+  const isLive = match.status === "live";
+  const isFinished = match.status === "finished";
 
   return (
     <div
+      onClick={onCardClick}
+      role="button"
+      tabIndex={0}
+      className="cursor-pointer active:opacity-80"
       style={{
         backgroundColor: "#1E293B",
         border: "0.5px solid #1E3A5F",
-        borderLeft: "3px solid #E8622A",
+        borderLeft: isLive ? "3px solid #E8622A" : "0.5px solid #1E3A5F",
         borderRadius: 12,
         margin: "4px 12px",
         padding: "10px 12px",
+        opacity: leaving ? 0 : 1,
+        transition: "opacity 200ms ease-out",
       }}
     >
-      {/* Line 1 */}
-      <div className="flex items-center gap-3">
-        <div className="flex flex-col gap-1">
-          <TeamLogo src={match.home.logo} name={match.home.name} size={28} rounded={4} />
-          <TeamLogo src={match.away.logo} name={match.away.name} size={28} rounded={4} />
+      <div className="flex items-start gap-3">
+        <div className="flex flex-1 flex-col gap-[6px]">
+          <div className="flex items-center gap-[10px]">
+            <TeamLogo src={match.home.logo} name={match.home.name} size={28} rounded={4} />
+            <span
+              style={{ fontSize: 13, color: "#E2E8F0" }}
+              className="flex-1 font-medium leading-tight"
+            >
+              {match.home.name}
+            </span>
+          </div>
+          <div className="flex items-center gap-[10px]">
+            <TeamLogo src={match.away.logo} name={match.away.name} size={28} rounded={4} />
+            <span
+              style={{ fontSize: 13, color: "#E2E8F0" }}
+              className="flex-1 font-medium leading-tight"
+            >
+              {match.away.name}
+            </span>
+          </div>
+          <span style={{ fontSize: 11, color: "#475569", marginTop: 2 }}>
+            {match.competition}
+            {match.venue && match.venue !== "—" ? ` · ${match.venue}` : ""}
+          </span>
         </div>
-        <div className="flex flex-1 flex-col gap-1">
-          <span style={{ fontSize: 13, color: "#FFFFFF" }} className="font-bold leading-tight">
-            {match.home.name}
-          </span>
-          <span style={{ fontSize: 13, color: "#FFFFFF" }} className="font-bold leading-tight">
-            {match.away.name}
-          </span>
-        </div>
-        <div className="flex flex-col items-end gap-1">
-          <span
-            className="font-display font-bold"
-            style={{ fontSize: 18, color: "#FFFFFF", lineHeight: 1 }}
-          >
-            {match.score.home} — {match.score.away}
-          </span>
+
+        <div className="flex flex-col items-end justify-center" style={{ minWidth: 56 }}>
+          {isFinished ? (
+            <>
+              <span
+                className="font-display font-bold"
+                style={{ fontSize: 16, color: "#FFFFFF", lineHeight: 1 }}
+              >
+                {match.scoreHome} — {match.scoreAway}
+              </span>
+              <span style={{ fontSize: 10, color: "#475569", marginTop: 4 }}>Terminé</span>
+            </>
+          ) : isLive ? (
+            <>
+              <span
+                className="font-display font-bold"
+                style={{ fontSize: 16, color: "#FFFFFF", lineHeight: 1 }}
+              >
+                {match.scoreHome} — {match.scoreAway}
+              </span>
+              <span style={{ fontSize: 10, color: "#22C55E", marginTop: 4 }}>
+                {match.minute}'
+              </span>
+            </>
+          ) : (
+            <span
+              className="font-display font-bold"
+              style={{ fontSize: 16, color: "#FFFFFF", lineHeight: 1 }}
+            >
+              {match.time}
+            </span>
+          )}
         </div>
       </div>
 
-      {/* Line 2 */}
-      <div className="mt-2 flex items-center justify-between">
-        <span style={{ fontSize: 11, color: "#22C55E" }}>⏱ {match.minute}'</span>
-        <span style={{ fontSize: 11, color: "#475569" }}>{match.competition}</span>
-      </div>
-
-      {/* Gauge */}
-      <div
-        className="mt-2"
-        style={{
-          backgroundColor: "#0F172A",
-          borderRadius: 4,
-          height: 4,
-          overflow: "hidden",
-        }}
-      >
-        <div
-          style={{
-            backgroundColor: "#E8622A",
-            height: "100%",
-            width: `${width}%`,
-            transition: "width 3000ms ease-out",
-          }}
-        />
-      </div>
-      <div className="mt-1 flex items-center justify-between">
-        <span style={{ fontSize: 10, color: "#475569" }}>
-          {match.mainEvent.label} — {match.mainEvent.current} / {match.mainEvent.threshold}
-        </span>
-        <span style={{ fontSize: 10, color: "#475569" }}>
-          {Math.round((match.mainEvent.current / match.mainEvent.threshold) * 100)}%
-        </span>
-      </div>
-
-      {/* Bottom row: eye + voir */}
-      <div className="mt-2 flex items-center justify-end gap-2">
+      <div className="mt-2 flex items-center justify-end">
         <button
           type="button"
-          onClick={() => onRemove(match.id)}
+          onClick={handleRemove}
           aria-label="Retirer de la watchlist"
           className="flex items-center justify-center"
           style={{
@@ -201,39 +259,7 @@ function LiveCard({ match, onRemove }: { match: LiveMatch; onRemove: (id: string
         >
           <Eye size={16} color="#E8622A" />
         </button>
-        <button
-          type="button"
-          onClick={() => navigate({ to: "/match/$matchId", params: { matchId: match.id } })}
-          style={{
-            backgroundColor: "transparent",
-            border: "0.5px solid #1E3A5F",
-            borderRadius: 8,
-            padding: "6px 12px",
-            fontSize: 12,
-            color: "#94A3B8",
-          }}
-        >
-          Voir
-        </button>
       </div>
-    </div>
-  );
-}
-
-function WatchableMatchCard({ match, onRemove }: { match: Match; onRemove: (id: string) => void }) {
-  // Wrap MatchCard so the eye toggle also removes from the page list.
-  // Since MatchCard owns its own state, we intercept the click on the eye button.
-  return (
-    <div
-      onClickCapture={(e) => {
-        const target = e.target as HTMLElement;
-        const btn = target.closest('button[aria-label*="watchlist"]');
-        if (btn) {
-          setTimeout(() => onRemove(match.id), 160);
-        }
-      }}
-    >
-      <MatchCard match={match} />
     </div>
   );
 }
@@ -245,10 +271,7 @@ function EmptyState() {
       style={{ minHeight: "60vh" }}
     >
       <Bookmark size={48} color="#1E3A5F" />
-      <h2
-        className="font-display font-bold mt-4 text-white"
-        style={{ fontSize: 16 }}
-      >
+      <h2 className="font-display font-bold mt-4 text-white" style={{ fontSize: 16 }}>
         Aucun match suivi
       </h2>
       <p style={{ fontSize: 13, color: "#475569", maxWidth: 260, marginTop: 6 }}>
@@ -259,16 +282,30 @@ function EmptyState() {
 }
 
 function FollowsPage() {
-  const [live, setLive] = useState<LiveMatch[]>(initialLive);
-  const [today, setToday] = useState<Match[]>(initialToday);
-  const [upcoming, setUpcoming] = useState<Match[]>(initialUpcoming);
+  const [matches, setMatches] = useState<FollowMatch[]>(initialMatches);
 
-  const total = useMemo(
-    () => live.length + today.length + upcoming.length,
-    [live, today, upcoming],
-  );
+  const grouped = useMemo(() => {
+    const byDate = new Map<string, FollowMatch[]>();
+    for (const m of matches) {
+      const arr = byDate.get(m.date) ?? [];
+      arr.push(m);
+      byDate.set(m.date, arr);
+    }
+    const sortedKeys = Array.from(byDate.keys()).sort();
+    return sortedKeys.map((key) => {
+      let label: string;
+      if (key === TODAY) label = "AUJOURD'HUI";
+      else if (key === TOMORROW) label = "DEMAIN";
+      else label = formatDateLabel(key);
+      return { key, label, items: byDate.get(key)! };
+    });
+  }, [matches]);
 
+  const total = matches.length;
   const isEmpty = total === 0;
+
+  const handleRemove = (id: string) =>
+    setMatches((arr) => arr.filter((m) => m.id !== id));
 
   return (
     <div
@@ -299,46 +336,14 @@ function FollowsPage() {
         {isEmpty ? (
           <EmptyState />
         ) : (
-          <>
-            {live.length > 0 && (
-              <section>
-                <SectionLabel live>En direct</SectionLabel>
-                {live.map((m) => (
-                  <LiveCard
-                    key={m.id}
-                    match={m}
-                    onRemove={(id) => setLive((arr) => arr.filter((x) => x.id !== id))}
-                  />
-                ))}
-              </section>
-            )}
-
-            {today.length > 0 && (
-              <section>
-                <SectionLabel>Aujourd'hui</SectionLabel>
-                {today.map((m) => (
-                  <WatchableMatchCard
-                    key={m.id}
-                    match={m}
-                    onRemove={(id) => setToday((arr) => arr.filter((x) => x.id !== id))}
-                  />
-                ))}
-              </section>
-            )}
-
-            {upcoming.length > 0 && (
-              <section>
-                <SectionLabel>À venir</SectionLabel>
-                {upcoming.map((m) => (
-                  <WatchableMatchCard
-                    key={m.id}
-                    match={m}
-                    onRemove={(id) => setUpcoming((arr) => arr.filter((x) => x.id !== id))}
-                  />
-                ))}
-              </section>
-            )}
-          </>
+          grouped.map((section) => (
+            <section key={section.key}>
+              <SectionLabel>{section.label}</SectionLabel>
+              {section.items.map((m) => (
+                <FollowCard key={m.id} match={m} onRemove={handleRemove} />
+              ))}
+            </section>
+          ))
         )}
       </main>
 
