@@ -2,3 +2,6 @@ project_id = "tzgwkavhqhwlfcjiiejm"
 
 [functions.analyze-match]
 verify_jwt = false
+
+[functions.generate-context]
+verify_jwt = false
