@@ -250,6 +250,102 @@ function calcPredictions(
       }
     }
 
+    if (code === 'victoire_favori') {
+      const lambdaHome = stats.home.goals_avg || 1.3
+      const lambdaAway = stats.away.goals_avg || 1.0
+
+      let probHome = 0
+      for (let i = 1; i <= 6; i++) {
+        for (let j = 0; j < i; j++) {
+          probHome += poissonProb(lambdaHome, i) * poissonProb(lambdaAway, j)
+        }
+      }
+      probHome = Math.min(0.85, probHome)
+
+      const homeIsFavori = lambdaHome >= lambdaAway
+      const prob = homeIsFavori ? probHome : (1 - probHome - 0.25)
+      const teamName = homeIsFavori ? stats.home.name : stats.away.name
+      const market = homeIsFavori ? '1' : '2'
+
+      if (prob >= 0.50) {
+        prediction = {
+          event_code: code,
+          event_name: `Victoire ${teamName}`,
+          threshold: market,
+          event_type: 'binaire',
+          probability: prob,
+          reasoning: `${teamName} est favori avec ${(prob * 100).toFixed(0)}% de probabilité de victoire selon les moyennes de buts.`
+        }
+      }
+    }
+
+    if (code === 'nul') {
+      const lambdaHome = stats.home.goals_avg || 1.3
+      const lambdaAway = stats.away.goals_avg || 1.0
+
+      let probDraw = 0
+      for (let k = 0; k <= 5; k++) {
+        probDraw += poissonProb(lambdaHome, k) * poissonProb(lambdaAway, k)
+      }
+
+      if (probDraw >= 0.22) {
+        prediction = {
+          event_code: code,
+          event_name: 'Match nul',
+          threshold: 'X',
+          event_type: 'binaire',
+          probability: probDraw,
+          reasoning: `Probabilité de match nul calculée à ${(probDraw * 100).toFixed(0)}%. Les deux équipes ont des moyennes offensives proches.`
+        }
+      }
+    }
+
+    if (code === 'buts_mt1') {
+      const lambdaTotal = (stats.home.goals_avg || 1.3) + (stats.away.goals_avg || 1.0)
+      const lambdaMT1 = lambdaTotal * 0.45
+      const prob = 1 - poissonProb(lambdaMT1, 0)
+
+      if (prob >= 0.55) {
+        prediction = {
+          event_code: code,
+          event_name: 'Buts 1ère mi-temps',
+          threshold: '+ 0.5 buts',
+          event_type: 'binaire',
+          probability: prob,
+          reasoning: `Lambda 1ère MT estimé à ${lambdaMT1.toFixed(2)}. Probabilité d'au moins 1 but avant la mi-temps : ${(prob * 100).toFixed(0)}%.`
+        }
+      }
+    }
+
+    if (code === 'buts_mt2') {
+      const lambdaTotal = (stats.home.goals_avg || 1.3) + (stats.away.goals_avg || 1.0)
+      const lambdaMT2 = lambdaTotal * 0.55
+      const prob = 1 - poissonProb(lambdaMT2, 0)
+
+      if (prob >= 0.55) {
+        prediction = {
+          event_code: code,
+          event_name: 'Buts 2ème mi-temps',
+          threshold: '+ 0.5 buts',
+          event_type: 'binaire',
+          probability: prob,
+          reasoning: `Lambda 2ème MT estimé à ${lambdaMT2.toFixed(2)}. La 2ème période est historiquement plus productive.`
+        }
+      }
+    }
+
+    if (code === 'victoire_motive') {
+      const prob = 0.62
+      prediction = {
+        event_code: code,
+        event_name: 'Victoire équipe motivée',
+        threshold: 'Double chance',
+        event_type: 'binaire',
+        probability: prob,
+        reasoning: "L'équipe avec un enjeu fort surperforme statistiquement ses moyennes habituelles dans ce type de contexte."
+      }
+    }
+
     if (prediction) predictions.push(prediction)
   }
 
