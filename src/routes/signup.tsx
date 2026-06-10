@@ -3,6 +3,7 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { ALL_COUNTRIES, FRANCOPHONE_AFRICA, OTHER_COUNTRIES } from "@/lib/countries";
 
 export const Route = createFileRoute("/signup")({
   head: () => ({
@@ -25,6 +26,8 @@ const inputBase: React.CSSProperties = {
   outline: "none",
 };
 
+type Mode = "email" | "phone";
+
 function Field({
   label,
   children,
@@ -45,10 +48,42 @@ function Field({
   );
 }
 
+function TabButton({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        flex: 1,
+        padding: "10px 12px",
+        borderRadius: 8,
+        fontSize: 13,
+        fontWeight: 600,
+        background: active ? "#E8622A" : "transparent",
+        color: active ? "#FFFFFF" : "#64748B",
+        border: active ? "0.5px solid #E8622A" : "0.5px solid #1E3A5F",
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
 function SignupPage() {
   const navigate = useNavigate();
+  const [mode, setMode] = useState<Mode>("email");
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
+  const [country, setCountry] = useState("");
+  const [dial, setDial] = useState("+225");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -59,7 +94,8 @@ function SignupPage() {
 
   const pwdValid = password.length >= 8;
   const match = confirm.length === 0 || confirm === password;
-  const valid = username && email && pwdValid && password === confirm;
+  const identityValid = mode === "email" ? !!email && !!country : !!phone.trim();
+  const valid = !!username && identityValid && pwdValid && password === confirm;
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -67,18 +103,23 @@ function SignupPage() {
     setError(null);
     setLoading(true);
     try {
+      const fullPhone = mode === "phone" ? `${dial}${phone.replace(/\s+/g, "")}` : undefined;
       const { error } = await supabase.auth.signUp({
-        email,
+        ...(mode === "email" ? { email } : { phone: fullPhone! }),
         password,
         options: {
           emailRedirectTo: typeof window !== "undefined" ? window.location.origin : undefined,
-          data: { username, phone: phone || null },
+          data: {
+            username,
+            country: country || null,
+            phone: fullPhone || null,
+          },
         },
       });
       if (error) {
         const msg = error.message.toLowerCase();
-        if (msg.includes("registered") || msg.includes("exists")) {
-          setError("Cet email est déjà associé à un compte");
+        if (msg.includes("registered") || msg.includes("exists") || msg.includes("already")) {
+          setError(mode === "email" ? "Cet email est déjà associé à un compte" : "Ce numéro est déjà associé à un compte");
         } else {
           setError(error.message);
         }
@@ -99,10 +140,7 @@ function SignupPage() {
     (e.currentTarget.style.borderColor = "#1E3A5F");
 
   return (
-    <div
-      className="min-h-screen font-sans"
-      style={{ backgroundColor: "#0F172A", color: "#E2E8F0" }}
-    >
+    <div className="min-h-screen font-sans" style={{ backgroundColor: "#0F172A", color: "#E2E8F0" }}>
       <header className="relative flex items-center justify-center" style={{ paddingTop: 40, paddingBottom: 8 }}>
         <button
           onClick={() => navigate({ to: "/login" })}
@@ -112,18 +150,18 @@ function SignupPage() {
           <ArrowLeft size={22} />
         </button>
         <div className="text-center">
-          <h1 className="font-display font-bold text-white" style={{ fontSize: 28 }}>
-            SKOUP
-          </h1>
+          <h1 className="font-display font-bold text-white" style={{ fontSize: 28 }}>SKOUP</h1>
           <p style={{ fontSize: 14, color: "#475569", marginTop: 4 }}>Crée ton compte</p>
         </div>
       </header>
 
-      <form
-        onSubmit={onSubmit}
-        style={{ marginTop: 32, padding: "0 24px" }}
-        className="flex flex-col gap-4"
-      >
+      <form onSubmit={onSubmit} style={{ marginTop: 24, padding: "0 24px" }} className="flex flex-col gap-4">
+        {/* Tabs */}
+        <div style={{ display: "flex", gap: 8 }}>
+          <TabButton active={mode === "email"} onClick={() => setMode("email")}>Email</TabButton>
+          <TabButton active={mode === "phone"} onClick={() => setMode("phone")}>Numéro de téléphone</TabButton>
+        </div>
+
         <Field label="Nom d'utilisateur">
           <input
             type="text"
@@ -136,29 +174,74 @@ function SignupPage() {
           />
         </Field>
 
-        <Field label="Email">
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            onFocus={focusStyle}
-            onBlur={blurStyle}
-            style={inputBase}
-            required
-          />
-        </Field>
-
-        <Field label="Téléphone (optionnel)">
-          <input
-            type="tel"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            onFocus={focusStyle}
-            onBlur={blurStyle}
-            placeholder="+225 XX XX XX XX XX"
-            style={inputBase}
-          />
-        </Field>
+        {mode === "email" ? (
+          <>
+            <Field label="Email">
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                onFocus={focusStyle}
+                onBlur={blurStyle}
+                style={inputBase}
+                required
+              />
+            </Field>
+            <Field label="Pays">
+              <select
+                value={country}
+                onChange={(e) => setCountry(e.target.value)}
+                style={{ ...inputBase, appearance: "none", cursor: "pointer", color: country ? "#FFFFFF" : "#64748B" }}
+                required
+              >
+                <option value="" disabled>Sélectionne ton pays</option>
+                <optgroup label="Afrique francophone">
+                  {FRANCOPHONE_AFRICA.map((c) => (
+                    <option key={c.code} value={c.name} style={{ color: "#000" }}>{c.flag} {c.name}</option>
+                  ))}
+                </optgroup>
+                <optgroup label="Autres pays">
+                  {OTHER_COUNTRIES.map((c) => (
+                    <option key={c.code} value={c.name} style={{ color: "#000" }}>{c.flag} {c.name}</option>
+                  ))}
+                </optgroup>
+              </select>
+            </Field>
+          </>
+        ) : (
+          <Field label="Numéro de téléphone">
+            <div style={{ display: "flex", gap: 8 }}>
+              <select
+                value={dial}
+                onChange={(e) => setDial(e.target.value)}
+                style={{
+                  ...inputBase,
+                  width: "30%",
+                  appearance: "none",
+                  cursor: "pointer",
+                  paddingLeft: 10,
+                  paddingRight: 10,
+                }}
+              >
+                {ALL_COUNTRIES.map((c, i) => (
+                  <option key={`${c.code}-${i}`} value={c.dial} style={{ color: "#000" }}>
+                    {c.flag} {c.dial}
+                  </option>
+                ))}
+              </select>
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                onFocus={focusStyle}
+                onBlur={blurStyle}
+                placeholder="XX XX XX XX XX"
+                style={{ ...inputBase, width: "70%" }}
+                required
+              />
+            </div>
+          </Field>
+        )}
 
         <Field label="Mot de passe" hint="Minimum 8 caractères">
           <div style={{ position: "relative" }}>
@@ -193,11 +276,7 @@ function SignupPage() {
               onChange={(e) => setConfirm(e.target.value)}
               onFocus={focusStyle}
               onBlur={blurStyle}
-              style={{
-                ...inputBase,
-                paddingRight: 44,
-                borderColor: !match ? "#EF4444" : "#1E3A5F",
-              }}
+              style={{ ...inputBase, paddingRight: 44, borderColor: !match ? "#EF4444" : "#1E3A5F" }}
               required
             />
             <button
@@ -210,9 +289,7 @@ function SignupPage() {
           </div>
         </Field>
 
-        {error && (
-          <p style={{ fontSize: 12, color: "#EF4444", textAlign: "center" }}>{error}</p>
-        )}
+        {error && <p style={{ fontSize: 12, color: "#EF4444", textAlign: "center" }}>{error}</p>}
 
         <button
           type="submit"
@@ -233,11 +310,13 @@ function SignupPage() {
           {loading ? "Création…" : "Créer mon compte"}
         </button>
 
-        <p style={{ textAlign: "center", fontSize: 13, color: "#94A3B8", marginTop: 16, paddingBottom: 32 }}>
+        <p style={{ fontSize: 11, color: "#475569", textAlign: "center", fontStyle: "italic", marginTop: 4 }}>
+          Tu pourras ajouter ton email ou numéro manquant depuis ton profil.
+        </p>
+
+        <p style={{ textAlign: "center", fontSize: 13, color: "#94A3B8", marginTop: 12, paddingBottom: 32 }}>
           Déjà un compte ?{" "}
-          <Link to="/login" style={{ color: "#E8622A", textDecoration: "underline" }}>
-            Se connecter
-          </Link>
+          <Link to="/login" style={{ color: "#E8622A", textDecoration: "underline" }}>Se connecter</Link>
         </p>
       </form>
     </div>
