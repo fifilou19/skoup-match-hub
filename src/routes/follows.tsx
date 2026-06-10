@@ -333,8 +333,32 @@ function FollowsPage() {
     };
   }, [userId]);
 
-  const handleRemove = async (id: string) => {
-    const target = items.find((it) => it.id === id);
+  // Poll update-live-scores every 2 minutes when there are live matches
+  useEffect(() => {
+    if (!userId) return;
+    const hasLiveMatches = items.some((it) =>
+      ["1H", "2H", "HT", "ET", "BT", "P"].includes(it.status || "")
+    );
+    if (!hasLiveMatches) return;
+
+    const interval = setInterval(async () => {
+      try {
+        await supabase.functions.invoke("update-live-scores");
+        const { data } = await supabase
+          .from("watchlist")
+          .select("*")
+          .eq("user_id", userId)
+          .order("kickoff_at", { ascending: true });
+        if (data) setItems(data as WatchlistRow[]);
+      } catch (e) {
+        console.error("update-live-scores failed", e);
+      }
+    }, 120000);
+
+    return () => clearInterval(interval);
+  }, [items, userId]);
+
+
     setItems((arr) => arr.filter((it) => it.id !== id));
     const { error } = await supabase.from("watchlist").delete().eq("id", id);
     if (error) {
