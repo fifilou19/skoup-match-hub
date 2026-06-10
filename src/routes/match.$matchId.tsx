@@ -227,8 +227,9 @@ function MatchDetail() {
               onClick={() => setWatched((w) => !w)}
               aria-label="Ajouter à la watchlist"
               className="flex h-9 w-9 items-center justify-center rounded-full active:bg-white/5"
+              style={{ border: "1px solid #2D4A6B" }}
             >
-              <Eye size={20} color={watched ? "#E8622A" : "#94A3B8"} />
+              <Eye size={26} color={watched ? "#E8622A" : "#94A3B8"} />
             </button>
           )}
         </div>
