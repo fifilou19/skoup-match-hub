@@ -55,7 +55,7 @@ const upcomingMock = {
         "Arsenal génère 2.1 xG par match à domicile. Chelsea concède 1.4 xG en déplacement. Le scénario ouvert favorise un match prolifique.",
     },
     {
-      name: "Corners Arsenal",
+      name: "Corners",
       threshold: "Équipe 1 + 5.5",
       type: "intervalle",
       interval: "Entre 6 et 9 corners pour Arsenal",
@@ -103,7 +103,7 @@ const finishedMock = {
       actual: "3 buts marqués",
     },
     {
-      name: "Corners Argentine",
+      name: "Corners",
       threshold: "Équipe 1 + 5.5",
       correct: true,
       actual: "11 corners",
