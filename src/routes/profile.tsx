@@ -183,7 +183,7 @@ function ProfilePage() {
             overflow: "hidden",
           }}
         >
-          <EditableField label="Nom d'utilisateur" value={name} onSave={setName} />
+          <EditableField label="Nom d'utilisateur" value={name} onSave={saveUsername} />
           <Divider />
           <EditableField label="Email" value={email} onSave={setEmail} type="email" editable={false} />
           <Divider />
