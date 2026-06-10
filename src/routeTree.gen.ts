@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as FollowsRouteImport } from './routes/follows'
 import { Route as ExplorerRouteImport } from './routes/explorer'
 import { Route as IndexRouteImport } from './routes/index'
@@ -18,6 +19,11 @@ import { Route as MatchMatchIdRouteImport } from './routes/match.$matchId'
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FollowsRoute = FollowsRouteImport.update({
@@ -45,6 +51,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/explorer': typeof ExplorerRoute
   '/follows': typeof FollowsRoute
+  '/profile': typeof ProfileRoute
   '/settings': typeof SettingsRoute
   '/match/$matchId': typeof MatchMatchIdRoute
 }
@@ -52,6 +59,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/explorer': typeof ExplorerRoute
   '/follows': typeof FollowsRoute
+  '/profile': typeof ProfileRoute
   '/settings': typeof SettingsRoute
   '/match/$matchId': typeof MatchMatchIdRoute
 }
@@ -60,19 +68,33 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/explorer': typeof ExplorerRoute
   '/follows': typeof FollowsRoute
+  '/profile': typeof ProfileRoute
   '/settings': typeof SettingsRoute
   '/match/$matchId': typeof MatchMatchIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/explorer' | '/follows' | '/settings' | '/match/$matchId'
+  fullPaths:
+    | '/'
+    | '/explorer'
+    | '/follows'
+    | '/profile'
+    | '/settings'
+    | '/match/$matchId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/explorer' | '/follows' | '/settings' | '/match/$matchId'
+  to:
+    | '/'
+    | '/explorer'
+    | '/follows'
+    | '/profile'
+    | '/settings'
+    | '/match/$matchId'
   id:
     | '__root__'
     | '/'
     | '/explorer'
     | '/follows'
+    | '/profile'
     | '/settings'
     | '/match/$matchId'
   fileRoutesById: FileRoutesById
@@ -81,6 +103,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ExplorerRoute: typeof ExplorerRoute
   FollowsRoute: typeof FollowsRoute
+  ProfileRoute: typeof ProfileRoute
   SettingsRoute: typeof SettingsRoute
   MatchMatchIdRoute: typeof MatchMatchIdRoute
 }
@@ -92,6 +115,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/follows': {
@@ -129,6 +159,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ExplorerRoute: ExplorerRoute,
   FollowsRoute: FollowsRoute,
+  ProfileRoute: ProfileRoute,
   SettingsRoute: SettingsRoute,
   MatchMatchIdRoute: MatchMatchIdRoute,
 }
