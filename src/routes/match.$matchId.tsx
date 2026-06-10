@@ -48,28 +48,34 @@ const upcomingMock = {
     "Arsenal entre dans ce match en position de force avec une supériorité technique marquée. Chelsea adopte un bloc défensif bas face à la pression du domicile. Le pressing haut d'Arsenal devrait générer de nombreuses occasions et corners.",
   predictions: [
     {
-      name: "Over 2.5 buts",
-      threshold: "+ de 3 buts",
+      name: "Total buts",
+      threshold: "+ 2.5 buts",
+      type: "binaire",
       analysis:
-        "Arsenal génère 2.1 xG par match à domicile. Chelsea concède 1.4 xG en déplacement. Le scénario ouvert favorise un match prolifique des deux côtés.",
+        "Arsenal génère 2.1 xG par match à domicile. Chelsea concède 1.4 xG en déplacement. Le scénario ouvert favorise un match prolifique.",
     },
     {
       name: "Corners Arsenal",
-      threshold: "12 corners",
+      threshold: "Équipe 1 + 5.5",
+      type: "intervalle",
+      interval: "Entre 6 et 9 corners pour Arsenal",
       analysis:
-        "Arsenal génère en moyenne 7.2 corners à domicile face aux blocs défensifs. Chelsea concède 6.8 corners par match en déplacement. Intervalle estimé entre 12 et 16 corners pour Arsenal.",
+        "Arsenal génère en moyenne 7.2 corners à domicile face aux blocs défensifs. Chelsea concède 6.8 corners par match en déplacement cette saison.",
     },
     {
-      name: "BTTS",
-      threshold: "Les deux marquent",
+      name: "Les deux équipes marquent",
+      threshold: "Oui",
+      type: "binaire",
       analysis:
-        "Chelsea marque dans 70% de ses matchs en déplacement. Arsenal ne garde le clean sheet qu'à 35% à domicile cette saison.",
+        "Chelsea marque dans 70% de ses matchs en déplacement. Arsenal ne garde le clean sheet qu'à 35% à domicile.",
     },
     {
       name: "Cartons",
-      threshold: "+ de 4 cartons",
+      threshold: "+ 3.5 cartons",
+      type: "intervalle",
+      interval: "Entre 4 et 6 cartons attendus",
       analysis:
-        "Derby londonien à fort enjeu. L'arbitre siffle en moyenne 4.2 cartons par rencontre. Contexte compétitif qui favorise les fautes et sanctions.",
+        "Derby londonien à fort enjeu. L'arbitre siffle en moyenne 4.2 cartons par rencontre cette saison.",
     },
   ],
 };
@@ -91,26 +97,26 @@ const finishedMock = {
     "L'Argentine affrontait l'Islande dans le cadre de la Coupe du Monde 2026. Les Argentins se présentaient en tant que favoris et tenants du titre. L'Islande avait surpris lors de la phase de groupes mais se heurtait à la classe de l'Albiceleste. Les absences défensives islandaises avaient pesé lourd dans la rencontre.",
   predictions: [
     {
-      name: "Over 2.5 buts",
-      threshold: "+ de 3 buts",
+      name: "Total buts",
+      threshold: "+ 2.5 buts",
       correct: true,
       actual: "3 buts marqués",
     },
     {
       name: "Corners Argentine",
-      threshold: "8 corners",
+      threshold: "Équipe 1 + 5.5",
       correct: true,
       actual: "11 corners",
     },
     {
-      name: "BTTS",
-      threshold: "Les deux marquent",
+      name: "Les deux équipes marquent",
+      threshold: "Oui",
       correct: false,
       actual: "Islande n'a pas marqué",
     },
     {
       name: "Cartons",
-      threshold: "+ de 3 cartons",
+      threshold: "+ 3.5 cartons",
       correct: false,
       actual: "2 cartons au total",
     },
