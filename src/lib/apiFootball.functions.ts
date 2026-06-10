@@ -96,6 +96,7 @@ export interface DtoTeamSearch {
   country: string;
 }
 export const searchTeams = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d) =>
     z.object({ q: z.string().min(2).max(50) }).parse(d),
   )
