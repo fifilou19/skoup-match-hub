@@ -51,7 +51,9 @@ function SettingsPage() {
 
       <main className="pb-24">
         {/* Profile */}
-        <section
+        <button
+          type="button"
+          onClick={() => navigate({ to: "/profile" })}
           style={{
             backgroundColor: "#1E293B",
             border: "0.5px solid #1E3A5F",
@@ -59,7 +61,7 @@ function SettingsPage() {
             margin: 16,
             padding: 16,
           }}
-          className="flex items-center"
+          className="flex w-full items-center text-left active:bg-white/5"
         >
           <div
             className="flex items-center justify-center"
@@ -75,14 +77,15 @@ function SettingsPage() {
               KM
             </span>
           </div>
-          <div className="ml-3 flex flex-col">
+          <div className="ml-3 flex flex-col flex-1">
             <span style={{ fontSize: 14, color: "#FFFFFF", fontWeight: 500 }}>
               Kofi Mensah
             </span>
             <span style={{ fontSize: 12, color: "#64748B" }}>kofi.mensah@gmail.com</span>
             <span style={{ fontSize: 11, color: "#475569" }}>🇨🇮 Côte d'Ivoire</span>
           </div>
-        </section>
+          <ChevronRight size={16} color="#475569" />
+        </button>
 
         {/* Subscription — FREE */}
         <section
