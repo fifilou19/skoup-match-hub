@@ -25,10 +25,20 @@ interface FieldProps {
 function EditableField({ label, value, onSave, type = "text", editable = true }: FieldProps) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
+  const [saving, setSaving] = useState(false);
 
-  const save = () => {
-    onSave(draft);
-    setEditing(false);
+  useEffect(() => {
+    if (!editing) setDraft(value);
+  }, [value, editing]);
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      await onSave(draft);
+      setEditing(false);
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (!editable) {
