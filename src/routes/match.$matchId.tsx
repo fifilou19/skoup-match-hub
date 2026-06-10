@@ -199,14 +199,80 @@ function MatchDetail() {
       setWatchLoading(false);
     }
   };
-  const [stored, setStored] = useState<StoredAnalysis | null>(() =>
-    loadStoredAnalysis(matchId)
-  );
+  const [stored, setStored] = useState<StoredAnalysis | null>(() => {
+    const local = loadStoredAnalysis(matchId);
+    if (
+      local &&
+      local.profile_code !== "PENDING" &&
+      local.predictions?.length > 0
+    ) {
+      return local;
+    }
+    return null;
+  });
   const [analyzing, setAnalyzing] = useState(false);
   const [contextText, setContextText] = useState<string | null>(
     stored?.context_text ?? null
   );
   const [contextLoading, setContextLoading] = useState(false);
+
+  // If no valid local analysis, try to recover one from Supabase
+  useEffect(() => {
+    if (stored) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data: remote } = await supabase
+          .from("analyses")
+          .select("*, predictions(*)")
+          .eq("match_id", matchId.toString())
+          .maybeSingle();
+        if (cancelled || !remote) return;
+        if (
+          remote.profile_code === "PENDING" ||
+          !remote.predictions ||
+          remote.predictions.length === 0
+        ) {
+          return;
+        }
+        const mapped: StoredAnalysis = {
+          profile_code: remote.profile_code,
+          profile_label: remote.profile_label,
+          score_axe1: remote.score_axe1,
+          score_axe2: remote.score_axe2,
+          confidence: remote.confidence,
+          context_text: remote.context_text,
+          scenario_label: remote.scenario_label,
+          scenario_text: remote.scenario_text,
+          predictions: (remote.predictions as any[])
+            .map((p) => ({
+              event_name: p.event_name,
+              threshold: p.threshold,
+              event_type: p.event_type,
+              interval_text: p.interval_text,
+              reasoning: p.reasoning,
+              probability:
+                typeof p.probability === "number" ? p.probability : null,
+              display_order: p.display_order,
+            }))
+            .sort(
+              (a, b) => (a.display_order ?? 0) - (b.display_order ?? 0)
+            ),
+        };
+        saveStoredAnalysis(matchId, mapped);
+        if (!cancelled) {
+          setStored(mapped);
+          if (mapped.context_text) setContextText(mapped.context_text);
+        }
+      } catch (e) {
+        console.log("Analyse non trouvée en base:", e);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [matchId, stored]);
+
 
   // Auto-generate context once the match is loaded (upcoming only)
   useEffect(() => {
