@@ -169,8 +169,10 @@ function MatchDetail() {
     const { data: sessionData } = await supabase.auth.getSession();
     if (!sessionData.session) {
       toast.error("Connecte-toi pour lancer une analyse.");
+      navigate({ to: "/auth" });
       return;
     }
+
     setAnalyzing(true);
     try {
       const { data: res, error } = await supabase.functions.invoke(
