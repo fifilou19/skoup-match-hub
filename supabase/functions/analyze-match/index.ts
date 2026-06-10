@@ -484,29 +484,58 @@ Deno.serve(async (req) => {
     const homeS = homeStats.response || {}
     const awayS = awayStats.response || {}
 
-    // Fetch corner stats per recent fixture in parallel
-    async function avgCorners(fixtures: any[], teamId: number, fallback: number): Promise<number> {
+    // Fetch advanced stats (corners + xG) per recent fixture in parallel
+    async function getTeamAdvancedStats(
+      fixtures: any[],
+      teamId: number,
+      fallbackCorners: number
+    ): Promise<{ avgCorners: number; avgXg: number }> {
       const ids = (fixtures || []).slice(0, 10).map((f: any) => f.fixture?.id).filter(Boolean)
-      if (ids.length === 0) return fallback
-      const results = await Promise.all(ids.map((id: number) =>
-        fetch(`https://v3.football.api-sports.io/fixtures/statistics?fixture=${id}&team=${teamId}`,
-          { headers: { 'x-rapidapi-key': apiKey!, 'x-rapidapi-host': 'v3.football.api-sports.io' } })
-          .then(r => r.json()).catch(() => null)
-      ))
-      const values: number[] = []
-      for (const r of results) {
-        const stat = r?.response?.[0]?.statistics?.find((s: any) => s.type === 'Corner Kicks')
-        const v = typeof stat?.value === 'number' ? stat.value : parseInt(stat?.value, 10)
-        if (Number.isFinite(v)) values.push(v)
+      if (ids.length === 0) return { avgCorners: fallbackCorners, avgXg: 0 }
+
+      let totalCorners = 0
+      let totalXg = 0
+      let countCorners = 0
+      let countXg = 0
+
+      await Promise.all(ids.map(async (id: number) => {
+        try {
+          const r = await fetch(
+            `https://v3.football.api-sports.io/fixtures/statistics?fixture=${id}&team=${teamId}`,
+            { headers: { 'x-rapidapi-key': apiKey!, 'x-rapidapi-host': 'v3.football.api-sports.io' } }
+          ).then(res => res.json())
+
+          const stats = r?.response?.[0]?.statistics || []
+          const corners = stats.find((s: any) => s.type === 'Corner Kicks')
+          const xg = stats.find((s: any) =>
+            s.type === 'expected_goals' || s.type === 'Expected Goals'
+          )
+
+          if (corners?.value !== null && corners?.value !== undefined) {
+            const v = typeof corners.value === 'number' ? corners.value : parseInt(corners.value, 10)
+            if (Number.isFinite(v)) { totalCorners += v; countCorners++ }
+          }
+
+          if (xg?.value !== null && xg?.value !== undefined) {
+            const v = typeof xg.value === 'number' ? xg.value : parseFloat(xg.value)
+            if (Number.isFinite(v)) { totalXg += v; countXg++ }
+          }
+        } catch {
+          // ignore
+        }
+      }))
+
+      return {
+        avgCorners: countCorners > 0 ? totalCorners / countCorners : fallbackCorners,
+        avgXg: countXg > 0 ? totalXg / countXg : 0,
       }
-      if (values.length === 0) return fallback
-      return values.reduce((a, b) => a + b, 0) / values.length
     }
 
-    const [homeCornersAvg, awayCornersAvg] = await Promise.all([
-      avgCorners(homeRecent.response, homeId, 5.5),
-      avgCorners(awayRecent.response, awayId, 4.5),
+    const [homeAdvanced, awayAdvanced] = await Promise.all([
+      getTeamAdvancedStats(homeRecent.response, homeId, 5.5),
+      getTeamAdvancedStats(awayRecent.response, awayId, 4.5),
     ])
+
 
     const stats = {
       home: {
