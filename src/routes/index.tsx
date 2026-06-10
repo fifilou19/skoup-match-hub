@@ -63,8 +63,9 @@ function MatchesPage() {
     const byLeague = new Map<number, CompetitionGroup>();
     for (const dto of data.matches) {
       if (day === "today") {
-        if (isFinishedStatus(dto.status) || isLiveStatus(dto.status)) continue;
-        if (new Date(dto.kickoff).getTime() <= Date.now()) continue;
+        // Keep NS matches even if kickoff is slightly past (frequent delays)
+        if (isFinishedStatus(dto.status)) continue;
+        if (isLiveStatus(dto.status)) continue;
       }
 
       const key = dto.leagueId;
