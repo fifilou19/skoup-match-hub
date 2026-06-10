@@ -73,11 +73,6 @@ function SettingsPage() {
         .slice(0, 2)
     : email?.[0]?.toUpperCase() || "?";
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    setShowLogout(false);
-    navigate({ to: "/auth" });
-  };
 
   const onShare = async () => {
     try {
