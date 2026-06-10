@@ -215,6 +215,7 @@ function MatchDetail() {
     setTimeout(() => {
       setAnalyzing(false);
       setAnalyzed(true);
+      saveMatchAnalyzed(matchId);
     }, 3000);
   };
 
