@@ -68,6 +68,30 @@ function calcAxe1(stats: any): number {
 }
 
 // Calcul Score Axe 2 — Intensité
+function calcEnjeu(homeStanding: any, awayStanding: any, totalTeams: number): number {
+  if (!homeStanding || !awayStanding) return 0
+
+  const homeRank = homeStanding.rank || 10
+  const awayRank = awayStanding.rank || 10
+
+  const relegationZone = totalTeams - 2
+  const homeInDanger = homeRank >= relegationZone
+  const awayInDanger = awayRank >= relegationZone
+
+  const homeInTitle = homeRank <= 2
+  const awayInTitle = awayRank <= 2
+  const homeInEurope = homeRank <= 4
+  const awayInEurope = awayRank <= 4
+
+  if ((homeInDanger || awayInDanger) && (homeInTitle || awayInTitle)) return -2
+  if (homeInDanger || awayInDanger) return -2
+  if (homeInTitle && awayInTitle) return -2
+  if (homeInEurope && awayInEurope) return -1
+
+  return 0
+}
+
+// Calcul Score Axe 2 — Intensité
 function calcAxe2(stats: any, enjeu: number, confSignal: number): number {
   let score = 0
 
