@@ -17,9 +17,10 @@ interface FieldProps {
   value: string;
   onSave: (v: string) => void;
   type?: string;
+  editable?: boolean;
 }
 
-function EditableField({ label, value, onSave, type = "text" }: FieldProps) {
+function EditableField({ label, value, onSave, type = "text", editable = true }: FieldProps) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
 
@@ -27,6 +28,17 @@ function EditableField({ label, value, onSave, type = "text" }: FieldProps) {
     onSave(draft);
     setEditing(false);
   };
+
+  if (!editable) {
+    return (
+      <div className="flex w-full items-center px-4 py-3">
+        <div className="flex-1">
+          <div style={{ fontSize: 11, color: "#475569" }}>{label}</div>
+          <div style={{ fontSize: 13, color: "#FFFFFF", marginTop: 2 }}>{value}</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <button
@@ -125,9 +137,9 @@ function ProfilePage() {
         >
           <EditableField label="Nom d'utilisateur" value={name} onSave={setName} />
           <Divider />
-          <EditableField label="Email" value={email} onSave={setEmail} type="email" />
+          <EditableField label="Email" value={email} onSave={setEmail} type="email" editable={false} />
           <Divider />
-          <EditableField label="Téléphone" value={phone} onSave={setPhone} type="tel" />
+          <EditableField label="Téléphone" value={phone} onSave={setPhone} type="tel" editable={false} />
         </section>
 
         <h2
