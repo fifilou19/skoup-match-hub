@@ -559,8 +559,17 @@ function MatchDetail() {
               ? (data as typeof finishedMock).predictions.map((p) => (
                   <FinishedPredictionCard key={p.name} pred={p} />
                 ))
-              : upcomingMock.predictions.map((p) => (
-                  <UpcomingPredictionCard key={p.name} pred={p} />
+              : (stored?.predictions || upcomingMock.predictions).map((p: any) => (
+                  <UpcomingPredictionCard
+                    key={p.event_name || p.name}
+                    pred={{
+                      name: p.event_name || p.name,
+                      threshold: p.threshold,
+                      type: p.event_type || p.type,
+                      interval: p.interval_text || p.interval,
+                      analysis: p.reasoning || p.analysis,
+                    }}
+                  />
                 ))}
           </>
         )}
