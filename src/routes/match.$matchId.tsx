@@ -751,6 +751,37 @@ function MatchDetail() {
   );
 }
 
+function ConfidenceBadge({ value }: { value: string }) {
+  const v = value.toUpperCase();
+  const config =
+    v === "HAUTE"
+      ? { bg: "#0F2E1A", border: "#22C55E", color: "#22C55E", label: "Confiance haute", Icon: TrendingUp }
+      : v === "BASSE"
+      ? { bg: "#2D1F0A", border: "#854F0B", color: "#854F0B", label: "Confiance basse", Icon: TrendingDown }
+      : { bg: "#1E293B", border: "#E8622A", color: "#E8622A", label: "Confiance moyenne", Icon: Minus };
+  const { Icon } = config;
+  return (
+    <div
+      style={{
+        marginTop: 8,
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 6,
+        backgroundColor: config.bg,
+        border: `0.5px solid ${config.border}`,
+        borderRadius: 6,
+        padding: "4px 10px",
+      }}
+    >
+      <Icon size={12} color={config.color} />
+      <span style={{ fontSize: 11, color: config.color, fontWeight: 500 }}>
+        {config.label}
+      </span>
+    </div>
+  );
+}
+
+
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <h2
