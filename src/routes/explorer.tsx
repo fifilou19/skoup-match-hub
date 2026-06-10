@@ -8,6 +8,7 @@ import { TeamLogo } from "@/components/skoup/TeamLogo";
 import { ExplorerMatchCard } from "@/components/skoup/ExplorerMatchCard";
 import { searchTeams, getTeamNextFixtures, type DtoTeamSearch } from "@/lib/apiFootball.functions";
 import { dtoToMatch } from "@/lib/matchMapping";
+import type { Match } from "@/data/matches";
 
 export const Route = createFileRoute("/explorer")({
   head: () => ({
@@ -350,7 +351,7 @@ function TeamResults({ team, onBack, onSearchOtherTeam }: { team: DtoTeamSearch;
             </button>
           </div>
         )}
-        {matches.map((m) => (
+        {matches.map((m: Match) => (
           <ExplorerMatchCard key={m.id} match={m} />
         ))}
       </main>
