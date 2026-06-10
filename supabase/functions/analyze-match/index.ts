@@ -192,12 +192,10 @@ function calcPredictions(
       if (prob >= 0.55) {
         prediction = {
           event_code: code,
-          event_name: code === 'corners_favori'
-            ? `Corners ${stats.home.name}`
-            : 'Corners total',
-          threshold: `Total + ${threshold}.5`,
+          event_name: 'Corners',
+          threshold: `+ ${threshold}.5 corners`,
           event_type: 'intervalle',
-          interval_text: `Entre ${threshold} et ${threshold + 4} corners estimés`,
+          interval_text: `Entre ${threshold + 1} et ${threshold + 4} corners estimés`,
           probability: prob,
           reasoning: `Moyenne corners : ${lambdaCorners.toFixed(1)} par match. Seuil conservateur à ${threshold}.5.`
         }
