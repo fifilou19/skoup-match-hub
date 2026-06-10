@@ -215,9 +215,12 @@ function MatchDetail() {
   const data = isFinished ? finishedMock : upcomingMock;
 
   const [watched, setWatched] = useState(false);
-  const [analyzed, setAnalyzed] = useState(() => isMatchAnalyzed(matchId));
+  const [stored, setStored] = useState<StoredAnalysis | null>(() =>
+    loadStoredAnalysis(matchId)
+  );
   const [analyzing, setAnalyzing] = useState(false);
 
+  const analyzed = stored !== null;
   const showAnalysis = isFinished || analyzed;
 
   const handleBack = () => {
@@ -225,13 +228,40 @@ function MatchDetail() {
     else navigate({ to: "/" });
   };
 
-  const handleAnalyze = () => {
+  const handleAnalyze = async () => {
     setAnalyzing(true);
-    setTimeout(() => {
+    try {
+      const { data: res, error } = await supabase.functions.invoke(
+        "analyze-match",
+        { body: { match_id: matchId } }
+      );
+      if (error || !res?.success) {
+        throw new Error(error?.message || res?.error || "Analyse échouée");
+      }
+      const payload = res.data;
+      const predictions = (payload.predictions || []).map((p: any) => ({
+        event_name: p.event_name,
+        threshold: p.threshold,
+        event_type: p.event_type,
+        interval_text: p.interval_text,
+        reasoning: p.reasoning,
+      }));
+      const next: StoredAnalysis = {
+        profile_label: payload.profile_label,
+        scenario_text: payload.scenario_text,
+        context_text: payload.context_text,
+        predictions,
+      };
+      saveStoredAnalysis(matchId, next);
+      setStored(next);
+    } catch (e) {
+      console.error("analyze-match invoke failed", e);
+      toast.error(
+        "Analyse temporairement indisponible. Réessaie dans quelques instants."
+      );
+    } finally {
       setAnalyzing(false);
-      setAnalyzed(true);
-      saveMatchAnalyzed(matchId);
-    }, 3000);
+    }
   };
 
   const handleShare = () => {
