@@ -172,6 +172,7 @@ export type Database = {
           id: string
           kickoff_at: string | null
           match_id: string
+          minute: number | null
           score_away: number | null
           score_home: number | null
           status: string | null
@@ -188,6 +189,7 @@ export type Database = {
           id?: string
           kickoff_at?: string | null
           match_id: string
+          minute?: number | null
           score_away?: number | null
           score_home?: number | null
           status?: string | null
@@ -204,6 +206,7 @@ export type Database = {
           id?: string
           kickoff_at?: string | null
           match_id?: string
+          minute?: number | null
           score_away?: number | null
           score_home?: number | null
           status?: string | null

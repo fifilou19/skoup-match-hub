@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Bookmark, Eye, Lock } from "lucide-react";
+import { Bookmark, Lock, X } from "lucide-react";
 import { BottomNav } from "@/components/skoup/BottomNav";
 import { TeamLogo } from "@/components/skoup/TeamLogo";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -32,7 +32,9 @@ interface WatchlistRow {
   status: string | null;
   score_home: number | null;
   score_away: number | null;
+  minute: number | null;
 }
+
 
 const DAY_NAMES_FULL = ["DIM", "LUN", "MAR", "MER", "JEU", "VEN", "SAM"];
 const MONTH_NAMES_FULL = [
@@ -168,6 +170,11 @@ function FollowCard({
                 {item.score_home ?? 0} — {item.score_away ?? 0}
               </span>
               <span style={{ fontSize: 10, color: "#22C55E", marginTop: 4 }}>{status}</span>
+              {typeof item.minute === "number" && (
+                <span style={{ fontSize: 11, color: "#22C55E", marginTop: 2 }}>
+                  ⏱ {item.minute}'
+                </span>
+              )}
             </>
           ) : (
             <span className="font-display font-bold" style={{ fontSize: 16, color: "#FFFFFF", lineHeight: 1 }}>
@@ -181,8 +188,8 @@ function FollowCard({
         <button
           type="button"
           onClick={handleRemove}
-          aria-label="Retirer de la watchlist"
-          className="flex items-center justify-center"
+          aria-label="Retirer des suivis"
+          className="follow-remove-btn flex items-center justify-center transition-colors duration-150"
           style={{
             width: 28,
             height: 28,
@@ -191,12 +198,13 @@ function FollowCard({
             border: "0.5px solid #1E3A5F",
           }}
         >
-          <Eye size={16} color="#E8622A" />
+          <X size={16} color="#475569" />
         </button>
       </div>
     </div>
   );
 }
+
 
 function EmptyState() {
   return (
@@ -325,9 +333,35 @@ function FollowsPage() {
     };
   }, [userId]);
 
+  // Poll update-live-scores every 2 minutes when there are live matches
+  useEffect(() => {
+    if (!userId) return;
+    const hasLiveMatches = items.some((it) =>
+      ["1H", "2H", "HT", "ET", "BT", "P"].includes(it.status || "")
+    );
+    if (!hasLiveMatches) return;
+
+    const interval = setInterval(async () => {
+      try {
+        await supabase.functions.invoke("update-live-scores");
+        const { data } = await supabase
+          .from("watchlist")
+          .select("*")
+          .eq("user_id", userId)
+          .order("kickoff_at", { ascending: true });
+        if (data) setItems(data as WatchlistRow[]);
+      } catch (e) {
+        console.error("update-live-scores failed", e);
+      }
+    }, 120000);
+
+    return () => clearInterval(interval);
+  }, [items, userId]);
+
   const handleRemove = async (id: string) => {
     const target = items.find((it) => it.id === id);
     setItems((arr) => arr.filter((it) => it.id !== id));
+
     const { error } = await supabase.from("watchlist").delete().eq("id", id);
     if (error) {
       console.error("watchlist delete failed", error);
