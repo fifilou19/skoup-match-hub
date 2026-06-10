@@ -32,7 +32,9 @@ interface WatchlistRow {
   status: string | null;
   score_home: number | null;
   score_away: number | null;
+  minute: number | null;
 }
+
 
 const DAY_NAMES_FULL = ["DIM", "LUN", "MAR", "MER", "JEU", "VEN", "SAM"];
 const MONTH_NAMES_FULL = [
