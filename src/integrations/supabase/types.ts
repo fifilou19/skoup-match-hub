@@ -162,21 +162,51 @@ export type Database = {
       }
       watchlist: {
         Row: {
+          away_logo: string | null
+          away_name: string | null
+          competition_logo: string | null
+          competition_name: string | null
           created_at: string | null
+          home_logo: string | null
+          home_name: string | null
           id: string
+          kickoff_at: string | null
           match_id: string
+          score_away: number | null
+          score_home: number | null
+          status: string | null
           user_id: string
         }
         Insert: {
+          away_logo?: string | null
+          away_name?: string | null
+          competition_logo?: string | null
+          competition_name?: string | null
           created_at?: string | null
+          home_logo?: string | null
+          home_name?: string | null
           id?: string
+          kickoff_at?: string | null
           match_id: string
+          score_away?: number | null
+          score_home?: number | null
+          status?: string | null
           user_id: string
         }
         Update: {
+          away_logo?: string | null
+          away_name?: string | null
+          competition_logo?: string | null
+          competition_name?: string | null
           created_at?: string | null
+          home_logo?: string | null
+          home_name?: string | null
           id?: string
+          kickoff_at?: string | null
           match_id?: string
+          score_away?: number | null
+          score_home?: number | null
+          status?: string | null
           user_id?: string
         }
         Relationships: []
