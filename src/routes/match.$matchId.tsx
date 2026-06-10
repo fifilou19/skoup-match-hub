@@ -127,27 +127,34 @@ const finishedMock = {
 
 // ---------- Helpers ----------
 
-const STORAGE_KEY = "skoup_analyzed_matches";
+const STORAGE_PREFIX = "analysis_";
 
-function isMatchAnalyzed(matchId: string): boolean {
+type StoredAnalysis = {
+  profile_label: string;
+  scenario_text: string;
+  context_text: string;
+  predictions: Array<{
+    event_name: string;
+    threshold: string;
+    event_type: string;
+    interval_text?: string | null;
+    reasoning: string;
+  }>;
+};
+
+function loadStoredAnalysis(matchId: string): StoredAnalysis | null {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return false;
-    const analyzed = JSON.parse(raw) as string[];
-    return analyzed.includes(matchId);
+    const raw = localStorage.getItem(STORAGE_PREFIX + matchId);
+    if (!raw) return null;
+    return JSON.parse(raw) as StoredAnalysis;
   } catch {
-    return false;
+    return null;
   }
 }
 
-function saveMatchAnalyzed(matchId: string) {
+function saveStoredAnalysis(matchId: string, data: StoredAnalysis) {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    const analyzed = raw ? (JSON.parse(raw) as string[]) : [];
-    if (!analyzed.includes(matchId)) {
-      analyzed.push(matchId);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(analyzed));
-    }
+    localStorage.setItem(STORAGE_PREFIX + matchId, JSON.stringify(data));
   } catch {
     // ignore
   }
