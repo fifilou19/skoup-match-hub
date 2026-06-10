@@ -350,7 +350,7 @@ function TeamResults({ team, onBack, onSearchOtherTeam }: { team: DtoTeamSearch;
             </button>
           </div>
         )}
-        {matches.map((m) => (
+        {matches.map((m: Match) => (
           <ExplorerMatchCard key={m.id} match={m} />
         ))}
       </main>
