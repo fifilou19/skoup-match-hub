@@ -10,7 +10,11 @@ import {
   Sparkles,
   Check,
   X,
+  TrendingUp,
+  TrendingDown,
+  Minus,
 } from "lucide-react";
+
 import { TeamLogo } from "@/components/skoup/TeamLogo";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
