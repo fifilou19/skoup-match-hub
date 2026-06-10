@@ -200,7 +200,7 @@ function MatchDetail() {
   const data = isFinished ? finishedMock : upcomingMock;
 
   const [watched, setWatched] = useState(false);
-  const [analyzed, setAnalyzed] = useState(false);
+  const [analyzed, setAnalyzed] = useState(() => isMatchAnalyzed(matchId));
   const [analyzing, setAnalyzing] = useState(false);
 
   const showAnalysis = isFinished || analyzed;
