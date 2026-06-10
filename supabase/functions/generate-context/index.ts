@@ -140,17 +140,45 @@ Mentionne les enjeux, la forme récente et les absences importantes si disponibl
     const context_text = llmData.choices?.[0]?.message?.content?.trim() ||
       `${fixture.teams.home.name} affronte ${fixture.teams.away.name} dans le cadre de ${fixture.league.name}.`
 
-    await supabase.from('analyses').upsert({
+    // Vérifier si une analyse complète existe déjà (race condition guard)
+    const { data: existingFull } = await supabase
+      .from('analyses')
+      .select('profile_code, context_text')
+      .eq('match_id', match_id)
+      .maybeSingle()
+
+    if (existingFull && existingFull.profile_code !== 'PENDING') {
+      // Analyse complète déjà là — ne pas écraser
+      return new Response(
+        JSON.stringify({ context_text: existingFull.context_text }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    if (existingFull && existingFull.profile_code === 'PENDING') {
+      await supabase
+        .from('analyses')
+        .update({ context_text })
+        .eq('match_id', match_id)
+        .eq('profile_code', 'PENDING')
+
+      return new Response(
+        JSON.stringify({ context_text }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    await supabase.from('analyses').insert({
       match_id,
       context_text,
       profile_code: 'PENDING',
-      profile_label: "En attente d'analyse",
+      profile_label: 'En attente',
       score_axe1: 0,
       score_axe2: 0,
       confidence: 'MOYENNE',
       scenario_label: '',
       scenario_text: '',
-    }, { onConflict: 'match_id', ignoreDuplicates: false })
+    })
 
     return new Response(
       JSON.stringify({ context_text }),
