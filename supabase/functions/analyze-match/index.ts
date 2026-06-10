@@ -127,10 +127,10 @@ function getProfile(axe1: number, axe2: number): string {
 
 function getEventsForProfile(profile: string): string[] {
   const events: Record<string, string[]> = {
-    P1: ['total_buts_over', 'btts', 'corners_total', 'tentatives'],
-    P2: ['total_buts_under', 'cartons', 'fautes', 'nul'],
-    P3: ['victoire_favori', 'total_buts_over', 'corners_favori', 'tentatives_favori'],
-    P4: ['victoire_favori', 'total_buts_under', 'corners_favori', 'cartons_outsider'],
+    P1: ['total_buts_over', 'btts', 'corners_total', 'buts_mt2'],
+    P2: ['total_buts_under', 'cartons', 'nul', 'buts_mt1'],
+    P3: ['victoire_favori', 'total_buts_over', 'corners_favori', 'btts'],
+    P4: ['victoire_favori', 'total_buts_under', 'corners_favori', 'cartons'],
     P5: ['cartons', 'buts_mt1', 'buts_mt2', 'victoire_motive']
   }
   return events[profile] || events['P1']
@@ -430,7 +430,11 @@ Deno.serve(async (req) => {
       .eq('match_id', match_id)
       .maybeSingle()
 
-    if (existing) {
+    // Ne retourner le cache QUE si l'analyse est complète
+    if (existing &&
+        existing.profile_code !== 'PENDING' &&
+        existing.predictions &&
+        existing.predictions.length > 0) {
       return new Response(
         JSON.stringify({ success: true, cached: true, data: existing }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -668,7 +672,7 @@ Retourne UNIQUEMENT ce JSON valide :
 
     const { data: savedAnalysis, error: analysisError } = await supabaseAdmin
       .from('analyses')
-      .insert({
+      .upsert({
         match_id: match_id,
         profile_code: profile,
         profile_label: profileLabels[profile],
@@ -683,7 +687,7 @@ Retourne UNIQUEMENT ce JSON valide :
         scenario_label: llmData.scenario_label,
         scenario_text: llmData.scenario_text,
         has_press_conference: false
-      })
+      }, { onConflict: 'match_id' })
       .select()
       .single()
 
