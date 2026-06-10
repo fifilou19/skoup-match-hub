@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Share2, HelpCircle, LogOut, ChevronRight } from "lucide-react";
 import { BottomNav } from "@/components/skoup/BottomNav";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
@@ -25,6 +26,53 @@ function SettingsPage() {
   const navigate = useNavigate();
   const [showPlans, setShowPlans] = useState(false);
   const [showLogout, setShowLogout] = useState(false);
+  const [username, setUsername] = useState<string>("");
+  const [email, setEmail] = useState<string>("");
+  const [country, setCountry] = useState<string>("");
+  const [isAuthed, setIsAuthed] = useState<boolean>(false);
+  const [quotaUsed, setQuotaUsed] = useState<number>(0);
+  const quotaMax = 3;
+
+  useEffect(() => {
+    (async () => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const userId = sessionData?.session?.user?.id;
+      const userEmail = sessionData?.session?.user?.email ?? "";
+      if (!userId) {
+        setIsAuthed(false);
+        return;
+      }
+      setIsAuthed(true);
+      setEmail(userEmail);
+
+      const [{ data: profile }, { data: quota }] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("username, country")
+          .eq("id", userId)
+          .maybeSingle(),
+        supabase
+          .from("daily_quota")
+          .select("count")
+          .eq("user_id", userId)
+          .eq("quota_date", new Date().toISOString().split("T")[0])
+          .maybeSingle(),
+      ]);
+      setUsername(profile?.username ?? "");
+      setCountry(profile?.country ?? "");
+      setQuotaUsed(quota?.count ?? 0);
+    })();
+  }, []);
+
+  const initials = username
+    ? username
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2)
+    : email?.[0]?.toUpperCase() || "?";
+
 
   const onShare = async () => {
     try {
@@ -73,15 +121,17 @@ function SettingsPage() {
             }}
           >
             <span className="font-display font-bold text-white" style={{ fontSize: 18 }}>
-              KM
+              {initials}
             </span>
           </div>
           <div className="ml-3 flex flex-1 flex-col min-w-0">
             <span className="truncate" style={{ fontSize: 14, color: "#FFFFFF", fontWeight: 500 }}>
-              Kofi Mensah
+              {username || (isAuthed ? "Utilisateur" : "Invité")}
             </span>
-            <span className="truncate" style={{ fontSize: 12, color: "#64748B" }}>kofi.mensah@gmail.com</span>
-            <span className="truncate" style={{ fontSize: 11, color: "#475569" }}>🇨🇮 Côte d'Ivoire</span>
+            <span className="truncate" style={{ fontSize: 12, color: "#64748B" }}>{email || "—"}</span>
+            {country && (
+              <span className="truncate" style={{ fontSize: 11, color: "#475569" }}>{country}</span>
+            )}
           </div>
           <ChevronRight size={16} color="#475569" className="ml-2 shrink-0" />
         </button>
@@ -111,21 +161,25 @@ function SettingsPage() {
           </span>
           <p style={{ fontSize: 13, color: "#FFFFFF", marginTop: 4 }}>Plan gratuit</p>
           <p style={{ fontSize: 12, color: "#64748B", marginTop: 4 }}>
-            2 / 3 analyses utilisées aujourd'hui
+            {isAuthed
+              ? `${quotaUsed} / ${quotaMax} analyses utilisées aujourd'hui`
+              : "Connecte-toi pour suivre tes analyses"}
           </p>
-          <div className="mt-2 flex items-center gap-1">
-            {[0, 1, 2].map((i) => (
-              <span
-                key={i}
-                style={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: 999,
-                  backgroundColor: i < 2 ? "#E8622A" : "#1E3A5F",
-                }}
-              />
-            ))}
-          </div>
+          {isAuthed && (
+            <div className="mt-2 flex items-center gap-1">
+              {Array.from({ length: quotaMax }).map((_, i) => (
+                <span
+                  key={i}
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: 999,
+                    backgroundColor: i < quotaUsed ? "#E8622A" : "#1E3A5F",
+                  }}
+                />
+              ))}
+            </div>
+          )}
           <button
             type="button"
             onClick={() => setShowPlans(true)}

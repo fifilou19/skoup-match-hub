@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, Pencil, Lock, ChevronRight, Eye, EyeOff } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/profile")({
   head: () => ({
@@ -15,7 +17,7 @@ export const Route = createFileRoute("/profile")({
 interface FieldProps {
   label: string;
   value: string;
-  onSave: (v: string) => void;
+  onSave: (v: string) => void | Promise<void>;
   type?: string;
   editable?: boolean;
 }
@@ -23,10 +25,20 @@ interface FieldProps {
 function EditableField({ label, value, onSave, type = "text", editable = true }: FieldProps) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
+  const [saving, setSaving] = useState(false);
 
-  const save = () => {
-    onSave(draft);
-    setEditing(false);
+  useEffect(() => {
+    if (!editing) setDraft(value);
+  }, [value, editing]);
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      await onSave(draft);
+      setEditing(false);
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (!editable) {
@@ -101,10 +113,47 @@ function Divider() {
 
 function ProfilePage() {
   const navigate = useNavigate();
-  const [name, setName] = useState("Kofi Mensah");
-  const [email, setEmail] = useState("kofi.mensah@gmail.com");
-  const [phone, setPhone] = useState("+225 07 12 34 56 78");
+  const [userId, setUserId] = useState<string | null>(null);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [showPwd, setShowPwd] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const user = sessionData?.session?.user;
+      if (!user) return;
+      setUserId(user.id);
+      setEmail(user.email ?? "");
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("username, phone, country")
+        .eq("id", user.id)
+        .maybeSingle();
+      setName(profile?.username ?? "");
+      setPhone(user.phone ?? profile?.phone ?? "");
+    })();
+  }, []);
+
+  const saveUsername = async (newUsername: string) => {
+    if (!userId) {
+      toast.error("Tu dois être connecté");
+      return;
+    }
+    const { error } = await supabase
+      .from("profiles")
+      .upsert(
+        { id: userId, username: newUsername, updated_at: new Date().toISOString() },
+        { onConflict: "id" },
+      );
+    if (error) {
+      toast.error("Erreur lors de la sauvegarde");
+      throw error;
+    }
+    setName(newUsername);
+    toast.success("Nom d'utilisateur mis à jour ✓");
+  };
 
   return (
     <div className="min-h-screen font-sans text-[#E2E8F0]" style={{ backgroundColor: "#0F172A" }}>
@@ -134,7 +183,7 @@ function ProfilePage() {
             overflow: "hidden",
           }}
         >
-          <EditableField label="Nom d'utilisateur" value={name} onSave={setName} />
+          <EditableField label="Nom d'utilisateur" value={name} onSave={saveUsername} />
           <Divider />
           <EditableField label="Email" value={email} onSave={setEmail} type="email" editable={false} />
           <Divider />
