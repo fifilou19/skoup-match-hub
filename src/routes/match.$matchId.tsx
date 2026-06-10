@@ -40,6 +40,7 @@ type StoredAnalysis = {
     event_type: string;
     interval_text?: string | null;
     reasoning: string;
+    probability?: number | null;
   }>;
 };
 
