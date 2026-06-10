@@ -457,7 +457,7 @@ Retourne ce JSON exact :
   "scenario_label": "${profileLabels[profile]}",
   "scenario_text": "Description de la physionomie attendue du match en 2-3 phrases. Qu'est-ce qu'on attend comme type de match ?",
   "predictions_reasoning": {
-    ${predictions.map(p => `"${p.event_code}": "Explication courte en 2 phrases pourquoi cet événement est porteur pour ce match."`).join(',\n    ')}
+    ${predictions.map(p => `"${p.event_code}": "Pour le match ${fixture.teams.home.name} vs ${fixture.teams.away.name} avec le profil ${profileLabels[profile]}, explique en 2 phrases pourquoi l'événement '${p.event_name} ${p.threshold}' est porteur pour CE match spécifiquement. Utilise les stats réelles : buts moyens domicile ${stats.home.goals_avg.toFixed(2)}, buts moyens extérieur ${stats.away.goals_avg.toFixed(2)}, corners domicile ${stats.home.corners_avg.toFixed(1)}, corners extérieur ${stats.away.corners_avg.toFixed(1)}."`).join(',\n    ')}
   }
 }`
 
