@@ -11,6 +11,8 @@ import {
   X,
 } from "lucide-react";
 import { TeamLogo } from "@/components/skoup/TeamLogo";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 type Status = "upcoming" | "finished";
 
