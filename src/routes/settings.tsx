@@ -22,6 +22,7 @@ const SHARE_TEXT =
   "J'utilise SKOUP pour mes pronostics foot 🎯\nLe bon événement, au bon moment.\nTélécharge l'app : https://skoup.app";
 
 function SettingsPage() {
+  const navigate = useNavigate();
   const [showPlans, setShowPlans] = useState(false);
   const [showLogout, setShowLogout] = useState(false);
 
