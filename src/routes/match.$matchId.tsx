@@ -635,7 +635,12 @@ function MatchDetail() {
               >
                 {stored.profile_label}
               </span>
-              {stored.confidence && <ConfidenceBadge value={stored.confidence} />}
+              {stored.confidence && (
+                <div style={{ marginTop: 8 }}>
+                  <ConfidenceBadge value={stored.confidence} />
+                </div>
+              )}
+
 
               <p
                 style={{
