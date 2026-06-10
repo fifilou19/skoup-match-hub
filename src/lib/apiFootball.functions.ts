@@ -67,6 +67,7 @@ function mapFixture(f: any): DtoMatch {
 
 // ------- Fixtures by league + date -------
 export const getFixtures = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d) =>
     z
       .object({
