@@ -635,6 +635,8 @@ function MatchDetail() {
               >
                 {stored.profile_label}
               </span>
+              {stored.confidence && <ConfidenceBadge value={stored.confidence} />}
+
               <p
                 style={{
                   marginTop: 10,
