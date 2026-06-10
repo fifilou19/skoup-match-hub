@@ -537,12 +537,15 @@ Deno.serve(async (req) => {
     ])
 
 
+    const homeGoalsAvg = parseFloat(homeS.goals?.for?.average?.total || '1.3')
+    const awayGoalsAvg = parseFloat(awayS.goals?.for?.average?.total || '1.0')
+
     const stats = {
       home: {
         name: fixture.teams.home.name,
-        goals_avg: parseFloat(homeS.goals?.for?.average?.total || '1.3'),
-        xg_avg: parseFloat(homeS.goals?.for?.average?.total || '1.3'),
-        corners_avg: homeCornersAvg,
+        goals_avg: homeGoalsAvg,
+        xg_avg: homeAdvanced.avgXg > 0 ? homeAdvanced.avgXg : homeGoalsAvg,
+        corners_avg: homeAdvanced.avgCorners,
         cards_avg: (homeS.cards?.yellow?.total || 40) /
           Math.max(homeS.fixtures?.played?.home || 10, 1),
         ppda: 11,
@@ -554,9 +557,9 @@ Deno.serve(async (req) => {
       },
       away: {
         name: fixture.teams.away.name,
-        goals_avg: parseFloat(awayS.goals?.for?.average?.total || '1.0'),
-        xg_avg: parseFloat(awayS.goals?.for?.average?.total || '1.0'),
-        corners_avg: awayCornersAvg,
+        goals_avg: awayGoalsAvg,
+        xg_avg: awayAdvanced.avgXg > 0 ? awayAdvanced.avgXg : awayGoalsAvg,
+        corners_avg: awayAdvanced.avgCorners,
         cards_avg: (awayS.cards?.yellow?.total || 38) /
           Math.max(awayS.fixtures?.played?.away || 10, 1),
         ppda: 12,
@@ -570,6 +573,7 @@ Deno.serve(async (req) => {
           m.teams.home.id === homeId
       ).length || 0
     }
+
 
     // Standings pour calcul d'enjeu
     const standingsRes = await fetch(
