@@ -119,6 +119,32 @@ const finishedMock = {
 
 // ---------- Helpers ----------
 
+const STORAGE_KEY = "skoup_analyzed_matches";
+
+function isMatchAnalyzed(matchId: string): boolean {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return false;
+    const analyzed = JSON.parse(raw) as string[];
+    return analyzed.includes(matchId);
+  } catch {
+    return false;
+  }
+}
+
+function saveMatchAnalyzed(matchId: string) {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    const analyzed = raw ? (JSON.parse(raw) as string[]) : [];
+    if (!analyzed.includes(matchId)) {
+      analyzed.push(matchId);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(analyzed));
+    }
+  } catch {
+    // ignore
+  }
+}
+
 function pad(n: number) {
   return n.toString().padStart(2, "0");
 }
@@ -174,7 +200,7 @@ function MatchDetail() {
   const data = isFinished ? finishedMock : upcomingMock;
 
   const [watched, setWatched] = useState(false);
-  const [analyzed, setAnalyzed] = useState(false);
+  const [analyzed, setAnalyzed] = useState(() => isMatchAnalyzed(matchId));
   const [analyzing, setAnalyzing] = useState(false);
 
   const showAnalysis = isFinished || analyzed;
@@ -189,6 +215,7 @@ function MatchDetail() {
     setTimeout(() => {
       setAnalyzing(false);
       setAnalyzed(true);
+      saveMatchAnalyzed(matchId);
     }, 3000);
   };
 
