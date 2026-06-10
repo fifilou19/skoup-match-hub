@@ -120,6 +120,7 @@ function MatchDetail() {
     : false;
 
   const [watched, setWatched] = useState(false);
+  const [watchedLoading, setWatchedLoading] = useState(false);
   const [stored, setStored] = useState<StoredAnalysis | null>(() =>
     loadStoredAnalysis(matchId)
   );
@@ -128,6 +129,24 @@ function MatchDetail() {
     stored?.context_text ?? null
   );
   const [contextLoading, setContextLoading] = useState(false);
+
+  // Check if this match is already in the user's watchlist
+  useEffect(() => {
+    let cancelled = false;
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session || cancelled) return;
+      supabase
+        .from("watchlist")
+        .select("id")
+        .eq("user_id", session.user.id)
+        .eq("match_id", matchId)
+        .maybeSingle()
+        .then(({ data }) => {
+          if (!cancelled) setWatched(!!data);
+        });
+    });
+    return () => { cancelled = true; };
+  }, [matchId]);
 
   // Auto-generate context once the match is loaded (upcoming only)
   useEffect(() => {
@@ -159,6 +178,54 @@ function MatchDetail() {
 
   const analyzed = stored !== null;
   const showAnalysis = (isFinished && !!match) || analyzed;
+
+  const handleToggleWatch = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      toast.error("Connecte-toi pour suivre un match.");
+      return;
+    }
+    if (watchedLoading) return;
+    setWatchedLoading(true);
+    try {
+      if (!watched) {
+        const insertData: Record<string, unknown> = {
+          user_id: session.user.id,
+          match_id: matchId,
+        };
+        if (match) {
+          insertData.home_name = match.home.name;
+          insertData.away_name = match.away.name;
+          insertData.home_logo = match.home.logo;
+          insertData.away_logo = match.away.logo;
+          insertData.competition_name = match.leagueName;
+          insertData.competition_logo = match.leagueLogo ?? null;
+          insertData.kickoff_at = match.kickoff;
+          insertData.status = match.status;
+          insertData.score_home = match.goalsHome ?? null;
+          insertData.score_away = match.goalsAway ?? null;
+        }
+        const { error } = await supabase.from("watchlist").insert(insertData);
+        if (error) throw error;
+        setWatched(true);
+        toast.success("Match ajouté aux suivis");
+      } else {
+        const { error } = await supabase
+          .from("watchlist")
+          .delete()
+          .eq("user_id", session.user.id)
+          .eq("match_id", matchId);
+        if (error) throw error;
+        setWatched(false);
+        toast.success("Match retiré des suivis");
+      }
+    } catch (e) {
+      console.error("watchlist toggle error", e);
+      toast.error("Une erreur est survenue. Réessaie.");
+    } finally {
+      setWatchedLoading(false);
+    }
+  };
 
   const handleBack = () => {
     if (window.history.length > 1) router.history.back();
@@ -271,9 +338,10 @@ function MatchDetail() {
           {match && !isFinished && (
             <button
               type="button"
-              onClick={() => setWatched((w) => !w)}
-              aria-label="Ajouter à la watchlist"
-              className="flex h-9 w-9 items-center justify-center rounded-full active:bg-white/5"
+              onClick={handleToggleWatch}
+              aria-label={watched ? "Retirer des suivis" : "Ajouter aux suivis"}
+              disabled={watchedLoading}
+              className="flex h-9 w-9 items-center justify-center rounded-full active:bg-white/5 disabled:opacity-60"
               style={{ border: "1px solid #2D4A6B" }}
             >
               <Eye size={26} color={watched ? "#E8622A" : "#94A3B8"} />
