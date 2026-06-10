@@ -491,7 +491,7 @@ function MatchDetail() {
                   display: "inline-block",
                 }}
               >
-                {upcomingMock.scenarioProfile}
+                {stored?.profile_label || upcomingMock.scenarioProfile}
               </span>
               <p
                 style={{
@@ -501,7 +501,7 @@ function MatchDetail() {
                   lineHeight: 1.6,
                 }}
               >
-                {upcomingMock.scenarioText}
+                {stored?.scenario_text || upcomingMock.scenarioText}
               </p>
             </div>
           </>
