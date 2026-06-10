@@ -464,7 +464,7 @@ function MatchDetail() {
               ) : (
                 <>
                   <Sparkles size={18} color="#FFFFFF" />
-                  Lancer l'analyse SKOUP
+                  Lancer l'analyse&nbsp;
                 </>
               )}
             </button>
