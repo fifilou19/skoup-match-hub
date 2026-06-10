@@ -125,13 +125,12 @@ function ProfilePage() {
         </h1>
       </header>
 
-      <main className="pb-24">
+      <main className="mx-auto flex max-w-lg flex-col gap-4 px-4 pb-24">
         <section
           style={{
             backgroundColor: "#1E293B",
             border: "0.5px solid #1E3A5F",
             borderRadius: 12,
-            margin: 16,
             overflow: "hidden",
           }}
         >
@@ -142,37 +141,38 @@ function ProfilePage() {
           <EditableField label="Téléphone" value={phone} onSave={setPhone} type="tel" editable={false} />
         </section>
 
-        <h2
-          className="uppercase"
-          style={{
-            fontSize: 10,
-            color: "#475569",
-            letterSpacing: "0.08em",
-            margin: "20px 16px 8px",
-          }}
-        >
-          Sécurité
-        </h2>
-        <div
-          style={{
-            backgroundColor: "#1E293B",
-            border: "0.5px solid #1E3A5F",
-            borderRadius: 12,
-            margin: "0 16px",
-            overflow: "hidden",
-          }}
-        >
-          <button
-            type="button"
-            onClick={() => setShowPwd(true)}
-            className="flex w-full items-center gap-3 px-4 py-3 text-left active:bg-white/5"
+        <div>
+          <h2
+            className="uppercase"
+            style={{
+              fontSize: 10,
+              color: "#475569",
+              letterSpacing: "0.08em",
+              margin: "20px 0 8px",
+            }}
           >
-            <Lock size={20} color="#64748B" />
-            <span className="flex-1" style={{ fontSize: 13, color: "#FFFFFF" }}>
-              Changer le mot de passe
-            </span>
-            <ChevronRight size={16} color="#475569" />
-          </button>
+            Sécurité
+          </h2>
+          <div
+            style={{
+              backgroundColor: "#1E293B",
+              border: "0.5px solid #1E3A5F",
+              borderRadius: 12,
+              overflow: "hidden",
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => setShowPwd(true)}
+              className="flex w-full items-center gap-3 px-4 py-3 text-left active:bg-white/5"
+            >
+              <Lock size={20} color="#64748B" />
+              <span className="flex-1" style={{ fontSize: 13, color: "#FFFFFF" }}>
+                Changer le mot de passe
+              </span>
+              <ChevronRight size={16} color="#475569" />
+            </button>
+          </div>
         </div>
       </main>
 
