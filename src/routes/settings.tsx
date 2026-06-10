@@ -49,7 +49,7 @@ function SettingsPage() {
         </h1>
       </header>
 
-      <main className="pb-24">
+      <main className="mx-auto flex max-w-lg flex-col gap-4 px-4 pb-24">
         {/* Profile */}
         <button
           type="button"
@@ -58,7 +58,6 @@ function SettingsPage() {
             backgroundColor: "#1E293B",
             border: "0.5px solid #1E3A5F",
             borderRadius: 12,
-            margin: 16,
             padding: 16,
           }}
           className="flex w-full items-center text-left active:bg-white/5"
@@ -77,7 +76,7 @@ function SettingsPage() {
               KM
             </span>
           </div>
-          <div className="ml-3 flex flex-col flex-1 min-w-0">
+          <div className="ml-3 flex flex-1 flex-col min-w-0">
             <span className="truncate" style={{ fontSize: 14, color: "#FFFFFF", fontWeight: 500 }}>
               Kofi Mensah
             </span>
@@ -93,7 +92,6 @@ function SettingsPage() {
             backgroundColor: "#0F172A",
             border: "1px solid #1E3A5F",
             borderRadius: 12,
-            margin: "0 16px",
             padding: 16,
           }}
         >
@@ -171,44 +169,45 @@ function SettingsPage() {
         */}
 
         {/* Account */}
-        <h2
-          className="uppercase"
-          style={{
-            fontSize: 10,
-            color: "#475569",
-            letterSpacing: "0.08em",
-            margin: "20px 16px 8px",
-          }}
-        >
-          Compte
-        </h2>
-        <div
-          style={{
-            backgroundColor: "#1E293B",
-            border: "0.5px solid #1E3A5F",
-            borderRadius: 12,
-            margin: "0 16px",
-            overflow: "hidden",
-          }}
-        >
-          <Row
-            icon={<Share2 size={18} color="#94A3B8" />}
-            label="Partager SKOUP"
-            onClick={onShare}
-          />
-          <Divider />
-          <Row
-            icon={<HelpCircle size={18} color="#94A3B8" />}
-            label="Support & FAQ"
-            right={<ChevronRight size={16} color="#475569" />}
-          />
-          <Divider />
-          <Row
-            icon={<LogOut size={18} color="#EF4444" />}
-            label="Se déconnecter"
-            labelColor="#EF4444"
-            onClick={() => setShowLogout(true)}
-          />
+        <div>
+          <h2
+            className="uppercase"
+            style={{
+              fontSize: 10,
+              color: "#475569",
+              letterSpacing: "0.08em",
+              margin: "20px 0 8px",
+            }}
+          >
+            Compte
+          </h2>
+          <div
+            style={{
+              backgroundColor: "#1E293B",
+              border: "0.5px solid #1E3A5F",
+              borderRadius: 12,
+              overflow: "hidden",
+            }}
+          >
+            <Row
+              icon={<Share2 size={18} color="#94A3B8" />}
+              label="Partager SKOUP"
+              onClick={onShare}
+            />
+            <Divider />
+            <Row
+              icon={<HelpCircle size={18} color="#94A3B8" />}
+              label="Support & FAQ"
+              right={<ChevronRight size={16} color="#475569" />}
+            />
+            <Divider />
+            <Row
+              icon={<LogOut size={18} color="#EF4444" />}
+              label="Se déconnecter"
+              labelColor="#EF4444"
+              onClick={() => setShowLogout(true)}
+            />
+          </div>
         </div>
 
         {/* Footer */}
