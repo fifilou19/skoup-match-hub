@@ -35,9 +35,14 @@ export const Route = createFileRoute("/match/$matchId")({
 const STORAGE_PREFIX = "analysis_";
 
 type StoredAnalysis = {
+  profile_code?: string;
   profile_label: string;
+  scenario_label?: string;
   scenario_text: string;
   context_text: string;
+  confidence?: "HAUTE" | "MOYENNE" | "BASSE" | string;
+  score_axe1?: number;
+  score_axe2?: number;
   predictions: Array<{
     event_name: string;
     threshold: string;
@@ -45,8 +50,10 @@ type StoredAnalysis = {
     interval_text?: string | null;
     reasoning: string;
     probability?: number | null;
+    display_order?: number;
   }>;
 };
+
 
 function loadStoredAnalysis(matchId: string): StoredAnalysis | null {
   try {
