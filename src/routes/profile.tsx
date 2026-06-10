@@ -17,7 +17,7 @@ export const Route = createFileRoute("/profile")({
 interface FieldProps {
   label: string;
   value: string;
-  onSave: (v: string) => void;
+  onSave: (v: string) => void | Promise<void>;
   type?: string;
   editable?: boolean;
 }
