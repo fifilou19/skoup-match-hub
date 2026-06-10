@@ -1,20 +1,21 @@
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
 import {
   ArrowLeft,
   Eye,
   AlertTriangle,
-  CheckCircle,
   ChevronDown,
   Sparkles,
   Check,
   X,
 } from "lucide-react";
 import { TeamLogo } from "@/components/skoup/TeamLogo";
+import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
+import { getFixtureById } from "@/lib/apiFootball.functions";
 import { toast } from "sonner";
-
-type Status = "upcoming" | "finished";
 
 export const Route = createFileRoute("/match/$matchId")({
   validateSearch: (s: Record<string, unknown>) => ({
@@ -24,106 +25,6 @@ export const Route = createFileRoute("/match/$matchId")({
   }),
   component: MatchDetail,
 });
-
-// ---------- Mock data ----------
-
-const upcomingMock = {
-  home: {
-    name: "Arsenal",
-    logo: "https://media.api-sports.io/football/teams/42.png",
-  },
-  away: {
-    name: "Chelsea",
-    logo: "https://media.api-sports.io/football/teams/49.png",
-  },
-  kickoff: (() => {
-    const d = new Date();
-    d.setDate(d.getDate() + 2);
-    d.setHours(16, 30, 0, 0);
-    return d.toISOString();
-  })(),
-  pressConfAvailable: false,
-  context:
-    "Arsenal reçoit Chelsea dans un derby londonien au sommet de la Premier League. Arsenal occupe la 2e place avec 71 points, Chelsea la 4e avec 63 points. L'enjeu est crucial pour la course au Top 4. Côté visiteur, deux absences défensives majeures fragilisent l'organisation de Chelsea.",
-  scenarioProfile: "Déséquilibré / Ouvert",
-  scenarioText:
-    "Arsenal entre dans ce match en position de force avec une supériorité technique marquée. Chelsea adopte un bloc défensif bas face à la pression du domicile. Le pressing haut d'Arsenal devrait générer de nombreuses occasions et corners.",
-  predictions: [
-    {
-      name: "Total buts",
-      threshold: "+ 2.5 buts",
-      type: "binaire",
-      analysis:
-        "Arsenal génère 2.1 xG par match à domicile. Chelsea concède 1.4 xG en déplacement. Le scénario ouvert favorise un match prolifique.",
-    },
-    {
-      name: "Corners",
-      threshold: "Équipe 1 + 5.5",
-      type: "intervalle",
-      interval: "Entre 6 et 9 corners pour Arsenal",
-      analysis:
-        "Arsenal génère en moyenne 7.2 corners à domicile face aux blocs défensifs. Chelsea concède 6.8 corners par match en déplacement cette saison.",
-    },
-    {
-      name: "Les deux équipes marquent",
-      threshold: "Oui",
-      type: "binaire",
-      analysis:
-        "Chelsea marque dans 70% de ses matchs en déplacement. Arsenal ne garde le clean sheet qu'à 35% à domicile.",
-    },
-    {
-      name: "Cartons",
-      threshold: "+ 3.5 cartons",
-      type: "intervalle",
-      interval: "Entre 4 et 6 cartons attendus",
-      analysis:
-        "Derby londonien à fort enjeu. L'arbitre siffle en moyenne 4.2 cartons par rencontre cette saison.",
-    },
-  ],
-};
-
-const finishedMock = {
-  home: {
-    name: "Argentine",
-    logo: "https://media.api-sports.io/football/teams/26.png",
-  },
-  away: {
-    name: "Islande",
-    logo: "https://media.api-sports.io/football/teams/22.png",
-  },
-  kickoff: "2026-06-10T02:00:00Z",
-  scoreHome: 3,
-  scoreAway: 0,
-  scorers: "T. Almada 86' · L. Messi 72' (Pen.) · V. Barco 8'",
-  summary:
-    "L'Argentine affrontait l'Islande dans le cadre de la Coupe du Monde 2026. Les Argentins se présentaient en tant que favoris et tenants du titre. L'Islande avait surpris lors de la phase de groupes mais se heurtait à la classe de l'Albiceleste. Les absences défensives islandaises avaient pesé lourd dans la rencontre.",
-  predictions: [
-    {
-      name: "Total buts",
-      threshold: "+ 2.5 buts",
-      correct: true,
-      actual: "3 buts marqués",
-    },
-    {
-      name: "Corners",
-      threshold: "Équipe 1 + 5.5",
-      correct: true,
-      actual: "11 corners",
-    },
-    {
-      name: "Les deux équipes marquent",
-      threshold: "Oui",
-      correct: false,
-      actual: "Islande n'a pas marqué",
-    },
-    {
-      name: "Cartons",
-      threshold: "+ 3.5 cartons",
-      correct: false,
-      actual: "2 cartons au total",
-    },
-  ],
-};
 
 // ---------- Helpers ----------
 
@@ -182,18 +83,8 @@ function formatDateLabel(iso: string) {
   if (sameDay(d, tomorrow)) return "Demain";
   const days = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
   const months = [
-    "jan",
-    "fév",
-    "mar",
-    "avr",
-    "mai",
-    "juin",
-    "juil",
-    "août",
-    "sept",
-    "oct",
-    "nov",
-    "déc",
+    "jan", "fév", "mar", "avr", "mai", "juin",
+    "juil", "août", "sept", "oct", "nov", "déc",
   ];
   return `${days[d.getDay()]} ${d.getDate()} ${months[d.getMonth()]}`;
 }
@@ -203,25 +94,71 @@ function formatFinishedDate(iso: string) {
   return `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()} · ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+const FINISHED_STATUSES = new Set(["FT", "AET", "PEN", "AWD", "WO"]);
+
 // ---------- Component ----------
 
 function MatchDetail() {
   const { matchId } = Route.useParams();
-  const { status } = Route.useSearch();
   const navigate = useNavigate();
   const router = useRouter();
 
-  const isFinished = status === "finished" || matchId.startsWith("fin");
-  const data = isFinished ? finishedMock : upcomingMock;
+  const fetchFixture = useServerFn(getFixtureById);
+  const fixtureId = parseInt(matchId, 10);
+  const validId = Number.isFinite(fixtureId) && fixtureId > 0;
+
+  const { data: fixtureResp, isLoading: loadingFixture, isError } = useQuery({
+    queryKey: ["fixture", matchId],
+    queryFn: () => fetchFixture({ data: { fixtureId } }),
+    enabled: validId,
+    staleTime: 60_000,
+  });
+
+  const match = fixtureResp?.match ?? null;
+  const isFinished = match
+    ? FINISHED_STATUSES.has(match.status)
+    : false;
 
   const [watched, setWatched] = useState(false);
   const [stored, setStored] = useState<StoredAnalysis | null>(() =>
     loadStoredAnalysis(matchId)
   );
   const [analyzing, setAnalyzing] = useState(false);
+  const [contextText, setContextText] = useState<string | null>(
+    stored?.context_text ?? null
+  );
+  const [contextLoading, setContextLoading] = useState(false);
+
+  // Auto-generate context once the match is loaded (upcoming only)
+  useEffect(() => {
+    if (!match || isFinished || contextText) return;
+    let cancelled = false;
+    setContextLoading(true);
+    supabase.functions
+      .invoke("generate-context", { body: { match_id: matchId } })
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (error) {
+          console.error("generate-context failed", error);
+          setContextText(
+            `${match.home.name} affronte ${match.away.name} dans le cadre de ${match.leagueName}.`
+          );
+        } else {
+          setContextText(
+            (data as { context_text?: string } | null)?.context_text || null
+          );
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setContextLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [match, isFinished, matchId, contextText]);
 
   const analyzed = stored !== null;
-  const showAnalysis = isFinished || analyzed;
+  const showAnalysis = (isFinished && !!match) || analyzed;
 
   const handleBack = () => {
     if (window.history.length > 1) router.history.back();
@@ -249,11 +186,12 @@ function MatchDetail() {
       const next: StoredAnalysis = {
         profile_label: payload.profile_label,
         scenario_text: payload.scenario_text,
-        context_text: payload.context_text,
+        context_text: payload.context_text || contextText || "",
         predictions,
       };
       saveStoredAnalysis(matchId, next);
       setStored(next);
+      if (payload.context_text) setContextText(payload.context_text);
     } catch (e) {
       console.error("analyze-match invoke failed", e);
       toast.error(
@@ -265,10 +203,40 @@ function MatchDetail() {
   };
 
   const handleShare = () => {
-    const text = `Pronostic SKOUP : ${data.home.name} vs ${data.away.name}`;
+    if (!match) return;
+    const text = `Pronostic SKOUP : ${match.home.name} vs ${match.away.name}`;
     const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
     window.open(url, "_blank");
   };
+
+  // ---------- Loading / error states ----------
+  if (!validId || (!loadingFixture && (isError || !match))) {
+    return (
+      <div
+        className="flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center"
+        style={{ backgroundColor: "#0F172A", color: "#E2E8F0" }}
+      >
+        <AlertTriangle size={36} color="#EF4444" />
+        <p style={{ fontSize: 14 }}>
+          Ce match est introuvable ou n'est plus disponible.
+        </p>
+        <button
+          type="button"
+          onClick={handleBack}
+          style={{
+            backgroundColor: "#E8622A",
+            color: "#FFFFFF",
+            borderRadius: 8,
+            padding: "10px 18px",
+            fontSize: 14,
+            fontWeight: 600,
+          }}
+        >
+          Retour
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -293,7 +261,7 @@ function MatchDetail() {
           >
             <ArrowLeft size={20} color="#FFFFFF" />
           </button>
-          {!isFinished && (
+          {match && !isFinished && (
             <button
               type="button"
               onClick={() => setWatched((w) => !w)}
@@ -306,25 +274,54 @@ function MatchDetail() {
           )}
         </div>
 
+        {/* Competition row */}
+        {match && (
+          <div className="flex items-center justify-center gap-2 px-4 pt-2">
+            {match.leagueLogo && (
+              <img
+                src={match.leagueLogo}
+                alt=""
+                width={16}
+                height={16}
+                style={{ objectFit: "contain" }}
+              />
+            )}
+            <span style={{ fontSize: 11, color: "#94A3B8" }}>
+              {match.leagueName}
+            </span>
+          </div>
+        )}
+
         {/* Teams row */}
         <div className="flex items-start justify-between px-4 pb-4 pt-2">
           <div className="flex flex-1 flex-col items-center gap-2">
-            <TeamLogo
-              src={data.home.logo}
-              name={data.home.name}
-              size={64}
-              rounded={8}
-            />
-            <span
-              className="text-center text-white"
-              style={{ fontSize: 14, fontWeight: 600 }}
-            >
-              {data.home.name}
-            </span>
+            {match ? (
+              <>
+                <TeamLogo
+                  src={match.home.logo}
+                  name={match.home.name}
+                  size={64}
+                  rounded={8}
+                />
+                <span
+                  className="text-center text-white"
+                  style={{ fontSize: 14, fontWeight: 600 }}
+                >
+                  {match.home.name}
+                </span>
+              </>
+            ) : (
+              <>
+                <Skeleton className="h-16 w-16 rounded-lg" />
+                <Skeleton className="h-3 w-20" />
+              </>
+            )}
           </div>
 
           <div className="flex flex-1 flex-col items-center justify-center px-2">
-            {isFinished ? (
+            {!match ? (
+              <Skeleton className="h-10 w-24" />
+            ) : isFinished ? (
               <>
                 <div
                   style={{
@@ -335,14 +332,13 @@ function MatchDetail() {
                     color: "#94A3B8",
                   }}
                 >
-                  {formatFinishedDate(data.kickoff)}
+                  {formatFinishedDate(match.kickoff)}
                 </div>
                 <div
                   className="font-display font-bold text-white"
                   style={{ fontSize: 40, marginTop: 10, lineHeight: 1 }}
                 >
-                  {(data as typeof finishedMock).scoreHome} —{" "}
-                  {(data as typeof finishedMock).scoreAway}
+                  {match.goalsHome ?? 0} — {match.goalsAway ?? 0}
                 </div>
                 <div style={{ fontSize: 14, color: "#475569", marginTop: 6 }}>
                   Terminé
@@ -354,93 +350,73 @@ function MatchDetail() {
                   className="font-display font-bold text-white"
                   style={{ fontSize: 32, lineHeight: 1 }}
                 >
-                  {formatKickoffTime(data.kickoff)}
+                  {formatKickoffTime(match.kickoff)}
                 </div>
                 <div
                   style={{ fontSize: 14, color: "#FFFFFF", marginTop: 6 }}
                   className="text-center"
                 >
-                  {formatDateLabel(data.kickoff)}
+                  {formatDateLabel(match.kickoff)}
                 </div>
               </>
             )}
           </div>
 
           <div className="flex flex-1 flex-col items-center gap-2">
-            <TeamLogo
-              src={data.away.logo}
-              name={data.away.name}
-              size={64}
-              rounded={8}
-            />
-            <span
-              className="text-center text-white"
-              style={{ fontSize: 14, fontWeight: 600 }}
-            >
-              {data.away.name}
-            </span>
+            {match ? (
+              <>
+                <TeamLogo
+                  src={match.away.logo}
+                  name={match.away.name}
+                  size={64}
+                  rounded={8}
+                />
+                <span
+                  className="text-center text-white"
+                  style={{ fontSize: 14, fontWeight: 600 }}
+                >
+                  {match.away.name}
+                </span>
+              </>
+            ) : (
+              <>
+                <Skeleton className="h-16 w-16 rounded-lg" />
+                <Skeleton className="h-3 w-20" />
+              </>
+            )}
           </div>
         </div>
 
-        {isFinished && (
-          <div
-            className="px-4 pb-4 text-center"
-            style={{ fontSize: 11, color: "#94A3B8" }}
-          >
-            {(data as typeof finishedMock).scorers}
-          </div>
-        )}
-
-        {!isFinished && (
+        {match && !isFinished && (
           <div
             className="flex flex-col items-center px-4 pb-3 pt-2"
             style={{ borderTop: "0.5px solid #1E3A5F" }}
           >
-            {upcomingMock.pressConfAvailable ? (
-              <div
-                className="mt-2 inline-flex items-center gap-2"
-                style={{
-                  backgroundColor: "#0F2E1A",
-                  border: "0.5px solid #22C55E",
-                  borderRadius: 8,
-                  padding: "6px 14px",
-                }}
-              >
-                <CheckCircle size={14} color="#22C55E" />
-                <span style={{ fontSize: 12, color: "#22C55E" }}>
-                  Conférences de presse intégrées
-                </span>
-              </div>
-            ) : (
-              <>
-                <div
-                  className="mt-2 inline-flex items-center gap-2"
-                  style={{
-                    backgroundColor: "#2D1F0A",
-                    border: "0.5px solid #EF9F27",
-                    borderRadius: 8,
-                    padding: "5px 10px",
-                  }}
-                >
-                  <AlertTriangle size={14} color="#EF9F27" />
-                  <span style={{ fontSize: 11, color: "#EF9F27" }}>
-                    Conf. de presse non disponibles
-                  </span>
-                </div>
-                <p
-                  className="text-center italic"
-                  style={{
-                    fontSize: 10,
-                    color: "#EF9F27",
-                    marginTop: 4,
-                    maxWidth: 280,
-                  }}
-                >
-                  Les prédictions sont plus fiables après les conférences de
-                  presse
-                </p>
-              </>
-            )}
+            <div
+              className="mt-2 inline-flex items-center gap-2"
+              style={{
+                backgroundColor: "#2D1F0A",
+                border: "0.5px solid #EF9F27",
+                borderRadius: 8,
+                padding: "5px 10px",
+              }}
+            >
+              <AlertTriangle size={14} color="#EF9F27" />
+              <span style={{ fontSize: 11, color: "#EF9F27" }}>
+                Conf. de presse non disponibles
+              </span>
+            </div>
+            <p
+              className="text-center italic"
+              style={{
+                fontSize: 10,
+                color: "#EF9F27",
+                marginTop: 4,
+                maxWidth: 280,
+              }}
+            >
+              Les prédictions sont plus fiables après les conférences de presse
+            </p>
           </div>
         )}
       </header>
@@ -462,13 +438,19 @@ function MatchDetail() {
             lineHeight: 1.6,
           }}
         >
-          {isFinished
-            ? (data as typeof finishedMock).summary
-            : stored?.context_text || upcomingMock.context}
+          {contextLoading && !contextText ? (
+            <div className="flex flex-col gap-2">
+              <Skeleton className="h-3 w-full" />
+              <Skeleton className="h-3 w-11/12" />
+              <Skeleton className="h-3 w-3/4" />
+            </div>
+          ) : (
+            contextText || "Contexte indisponible pour ce match."
+          )}
         </div>
 
         {/* SCENARIO (upcoming only, after analysis) */}
-        {!isFinished && showAnalysis && (
+        {!isFinished && showAnalysis && stored && (
           <>
             <SectionLabel>SCÉNARIO ATTENDU</SectionLabel>
             <div
@@ -491,7 +473,7 @@ function MatchDetail() {
                   display: "inline-block",
                 }}
               >
-                {stored?.profile_label || upcomingMock.scenarioProfile}
+                {stored.profile_label}
               </span>
               <p
                 style={{
@@ -501,14 +483,14 @@ function MatchDetail() {
                   lineHeight: 1.6,
                 }}
               >
-                {stored?.scenario_text || upcomingMock.scenarioText}
+                {stored.scenario_text}
               </p>
             </div>
           </>
         )}
 
         {/* ANALYZE BUTTON */}
-        {!isFinished && !showAnalysis && (
+        {match && !isFinished && !showAnalysis && (
           <div style={{ margin: "16px 12px 0" }}>
             <button
               type="button"
@@ -552,25 +534,21 @@ function MatchDetail() {
         )}
 
         {/* PREDICTIONS */}
-        {showAnalysis && (
+        {showAnalysis && stored && (
           <>
             <SectionLabel>PRÉDICTIONS</SectionLabel>
-            {isFinished
-              ? (data as typeof finishedMock).predictions.map((p) => (
-                  <FinishedPredictionCard key={p.name} pred={p} />
-                ))
-              : (stored?.predictions || upcomingMock.predictions).map((p: any) => (
-                  <UpcomingPredictionCard
-                    key={p.event_name || p.name}
-                    pred={{
-                      name: p.event_name || p.name,
-                      threshold: p.threshold,
-                      type: p.event_type || p.type,
-                      interval: p.interval_text || p.interval,
-                      analysis: p.reasoning || p.analysis,
-                    }}
-                  />
-                ))}
+            {stored.predictions.map((p) => (
+              <UpcomingPredictionCard
+                key={p.event_name}
+                pred={{
+                  name: p.event_name,
+                  threshold: p.threshold,
+                  type: p.event_type,
+                  interval: p.interval_text || undefined,
+                  analysis: p.reasoning,
+                }}
+              />
+            ))}
           </>
         )}
       </main>
@@ -628,7 +606,13 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 function UpcomingPredictionCard({
   pred,
 }: {
-  pred: (typeof upcomingMock.predictions)[number];
+  pred: {
+    name: string;
+    threshold: string;
+    type: string;
+    interval?: string;
+    analysis: string;
+  };
 }) {
   const [open, setOpen] = useState(false);
   return (
@@ -652,9 +636,7 @@ function UpcomingPredictionCard({
         >
           {pred.name}
         </span>
-        <span
-          style={{ fontSize: 13, color: "#E8622A", fontWeight: 600 }}
-        >
+        <span style={{ fontSize: 13, color: "#E8622A", fontWeight: 600 }}>
           {pred.threshold}
         </span>
         <ChevronDown
@@ -681,53 +663,6 @@ function UpcomingPredictionCard({
           {pred.analysis}
         </div>
       )}
-    </div>
-  );
-}
-
-function FinishedPredictionCard({
-  pred,
-}: {
-  pred: (typeof finishedMock.predictions)[number];
-}) {
-  const ok = pred.correct;
-  return (
-    <div
-      style={{
-        backgroundColor: ok ? "#0F2E1A" : "#2D0F0F",
-        border: `0.5px solid ${ok ? "#22C55E" : "#EF4444"}`,
-        borderRadius: 12,
-        margin: "0 12px 8px",
-        padding: "12px 14px",
-      }}
-    >
-      <div className="flex items-center gap-3">
-        <span
-          className="flex-1 text-white"
-          style={{ fontSize: 13, fontWeight: 500 }}
-        >
-          {pred.name}
-        </span>
-        <div className="flex flex-col items-end">
-          <span
-            style={{
-              fontSize: 13,
-              color: "#E8622A",
-              fontWeight: 600,
-            }}
-          >
-            {pred.threshold}
-          </span>
-          <span style={{ fontSize: 11, color: "#475569", marginTop: 2 }}>
-            Résultat réel : {pred.actual}
-          </span>
-        </div>
-        {ok ? (
-          <Check size={16} color="#22C55E" />
-        ) : (
-          <X size={16} color="#EF4444" />
-        )}
-      </div>
     </div>
   );
 }
