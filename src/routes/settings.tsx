@@ -280,7 +280,11 @@ function SettingsPage() {
       {showLogout && (
         <LogoutDialog
           onCancel={() => setShowLogout(false)}
-          onConfirm={() => setShowLogout(false)}
+          onConfirm={async () => {
+            await supabase.auth.signOut();
+            setShowLogout(false);
+            navigate({ to: "/auth" });
+          }}
         />
       )}
 
