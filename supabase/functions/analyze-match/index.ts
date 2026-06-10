@@ -67,7 +67,7 @@ function calcAxe1(stats: any): number {
   return Math.min(10, score)
 }
 
-// Calcul Score Axe 2 — Intensité
+// Calcul de l'enjeu (Axe 2) basé sur les standings
 function calcEnjeu(homeStanding: any, awayStanding: any, totalTeams: number): number {
   if (!homeStanding || !awayStanding) return 0
 
