@@ -26,6 +26,58 @@ function SettingsPage() {
   const navigate = useNavigate();
   const [showPlans, setShowPlans] = useState(false);
   const [showLogout, setShowLogout] = useState(false);
+  const [username, setUsername] = useState<string>("");
+  const [email, setEmail] = useState<string>("");
+  const [country, setCountry] = useState<string>("");
+  const [isAuthed, setIsAuthed] = useState<boolean>(false);
+  const [quotaUsed, setQuotaUsed] = useState<number>(0);
+  const quotaMax = 3;
+
+  useEffect(() => {
+    (async () => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const userId = sessionData?.session?.user?.id;
+      const userEmail = sessionData?.session?.user?.email ?? "";
+      if (!userId) {
+        setIsAuthed(false);
+        return;
+      }
+      setIsAuthed(true);
+      setEmail(userEmail);
+
+      const [{ data: profile }, { data: quota }] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("username, country")
+          .eq("id", userId)
+          .maybeSingle(),
+        supabase
+          .from("daily_quota")
+          .select("count")
+          .eq("user_id", userId)
+          .eq("quota_date", new Date().toISOString().split("T")[0])
+          .maybeSingle(),
+      ]);
+      setUsername(profile?.username ?? "");
+      setCountry(profile?.country ?? "");
+      setQuotaUsed(quota?.count ?? 0);
+    })();
+  }, []);
+
+  const initials = username
+    ? username
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2)
+    : email?.[0]?.toUpperCase() || "?";
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setShowLogout(false);
+    navigate({ to: "/auth" });
+  };
 
   const onShare = async () => {
     try {
