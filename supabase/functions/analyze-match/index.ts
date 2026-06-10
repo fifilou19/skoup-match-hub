@@ -415,7 +415,7 @@ Deno.serve(async (req) => {
       .maybeSingle()
 
     const currentCount = quotaRow?.count || 0
-    const DAILY_LIMIT = 10
+    const DAILY_LIMIT = 3
     if (currentCount >= DAILY_LIMIT) {
       return new Response(
         JSON.stringify({ error: QUOTA_ERROR }),

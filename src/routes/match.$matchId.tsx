@@ -40,6 +40,7 @@ type StoredAnalysis = {
     event_type: string;
     interval_text?: string | null;
     reasoning: string;
+    probability?: number | null;
   }>;
 };
 
@@ -256,6 +257,7 @@ function MatchDetail() {
         event_type: p.event_type,
         interval_text: p.interval_text,
         reasoning: p.reasoning,
+        probability: typeof p.probability === "number" ? p.probability : null,
       }));
       const next: StoredAnalysis = {
         profile_label: payload.profile_label,
@@ -621,6 +623,8 @@ function MatchDetail() {
                   type: p.event_type,
                   interval: p.interval_text || undefined,
                   analysis: p.reasoning,
+                  probability:
+                    typeof p.probability === "number" ? p.probability : undefined,
                 }}
               />
             ))}
@@ -687,9 +691,16 @@ function UpcomingPredictionCard({
     type: string;
     interval?: string;
     analysis: string;
+    probability?: number;
   };
 }) {
   const [open, setOpen] = useState(false);
+  const pct =
+    typeof pred.probability === "number"
+      ? Math.max(0, Math.min(100, Math.round(pred.probability * 100)))
+      : null;
+  const gaugeColor =
+    pct === null ? "#475569" : pct >= 70 ? "#22C55E" : "#E8622A";
   return (
     <div
       style={{
@@ -723,6 +734,39 @@ function UpcomingPredictionCard({
           }}
         />
       </button>
+      {pct !== null && (
+        <div style={{ marginTop: 10 }}>
+          <div
+            style={{
+              height: 4,
+              borderRadius: 2,
+              backgroundColor: "#0F172A",
+              overflow: "hidden",
+            }}
+          >
+            <div
+              style={{
+                width: `${pct}%`,
+                height: "100%",
+                backgroundColor: gaugeColor,
+                borderRadius: 2,
+                transition: "width 300ms",
+              }}
+            />
+          </div>
+          <div
+            style={{
+              fontSize: 11,
+              color: gaugeColor,
+              marginTop: 4,
+              textAlign: "right",
+              fontWeight: 600,
+            }}
+          >
+            {pct}%
+          </div>
+        </div>
+      )}
       {open && (
         <div
           style={{

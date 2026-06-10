@@ -231,16 +231,44 @@ function ProfilePage() {
 }
 
 function PasswordSheet({ onClose }: { onClose: () => void }) {
-  const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
   const [confirm, setConfirm] = useState("");
-  const [showCurrent, setShowCurrent] = useState(false);
   const [showNext, setShowNext] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
 
   const nextTooShort = next.length > 0 && next.length < 8;
   const mismatch = confirm.length > 0 && confirm !== next;
-  const valid = current.length > 0 && next.length >= 8 && confirm === next;
+  const valid = next.length >= 8 && confirm === next;
+
+  const handleChangePassword = async () => {
+    if (next.length < 8) {
+      setPasswordError("Minimum 8 caractères");
+      return;
+    }
+    if (next !== confirm) {
+      setPasswordError("Les mots de passe ne correspondent pas");
+      return;
+    }
+    setIsLoading(true);
+    setPasswordError("");
+    try {
+      const { error } = await supabase.auth.updateUser({ password: next });
+      if (error) {
+        setPasswordError("Erreur : " + error.message);
+      } else {
+        toast.success("Mot de passe modifié avec succès ✓");
+        setNext("");
+        setConfirm("");
+        onClose();
+      }
+    } catch (e) {
+      setPasswordError("Une erreur est survenue");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div
@@ -263,14 +291,6 @@ function PasswordSheet({ onClose }: { onClose: () => void }) {
         <h3 className="font-display font-bold text-white" style={{ fontSize: 16, marginBottom: 12 }}>
           Changer le mot de passe
         </h3>
-
-        <PwdInput
-          label="Mot de passe actuel"
-          value={current}
-          onChange={setCurrent}
-          visible={showCurrent}
-          onToggle={() => setShowCurrent((v) => !v)}
-        />
 
         <PwdInput
           label="Nouveau mot de passe"
@@ -296,27 +316,34 @@ function PasswordSheet({ onClose }: { onClose: () => void }) {
           error={mismatch ? "Les mots de passe ne correspondent pas" : undefined}
         />
 
+        {passwordError && (
+          <p style={{ fontSize: 12, color: "#EF4444", marginBottom: 8 }}>
+            {passwordError}
+          </p>
+        )}
+
         <button
           type="button"
-          disabled={!valid}
-          onClick={onClose}
+          disabled={!valid || isLoading}
+          onClick={handleChangePassword}
           className="w-full"
           style={{
-            backgroundColor: valid ? "#E8622A" : "#1E3A5F",
-            color: valid ? "#FFFFFF" : "#64748B",
+            backgroundColor: valid && !isLoading ? "#E8622A" : "#1E3A5F",
+            color: valid && !isLoading ? "#FFFFFF" : "#64748B",
             borderRadius: 8,
             padding: 14,
             fontSize: 14,
             fontWeight: 500,
             marginTop: 8,
-            opacity: valid ? 1 : 0.6,
+            opacity: valid && !isLoading ? 1 : 0.6,
           }}
         >
-          Modifier le mot de passe
+          {isLoading ? "Modification…" : "Modifier le mot de passe"}
         </button>
         <button
           type="button"
           onClick={onClose}
+          disabled={isLoading}
           className="w-full"
           style={{
             backgroundColor: "transparent",
