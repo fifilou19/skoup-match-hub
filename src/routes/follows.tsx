@@ -170,6 +170,11 @@ function FollowCard({
                 {item.score_home ?? 0} — {item.score_away ?? 0}
               </span>
               <span style={{ fontSize: 10, color: "#22C55E", marginTop: 4 }}>{status}</span>
+              {typeof item.minute === "number" && (
+                <span style={{ fontSize: 11, color: "#22C55E", marginTop: 2 }}>
+                  ⏱ {item.minute}'
+                </span>
+              )}
             </>
           ) : (
             <span className="font-display font-bold" style={{ fontSize: 16, color: "#FFFFFF", lineHeight: 1 }}>
@@ -183,8 +188,8 @@ function FollowCard({
         <button
           type="button"
           onClick={handleRemove}
-          aria-label="Retirer de la watchlist"
-          className="flex items-center justify-center"
+          aria-label="Retirer des suivis"
+          className="follow-remove-btn flex items-center justify-center transition-colors duration-150"
           style={{
             width: 28,
             height: 28,
@@ -193,12 +198,13 @@ function FollowCard({
             border: "0.5px solid #1E3A5F",
           }}
         >
-          <Eye size={16} color="#E8622A" />
+          <X size={16} color="#475569" />
         </button>
       </div>
     </div>
   );
 }
+
 
 function EmptyState() {
   return (
