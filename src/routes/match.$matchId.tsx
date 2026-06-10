@@ -464,7 +464,7 @@ function MatchDetail() {
         >
           {isFinished
             ? (data as typeof finishedMock).summary
-            : upcomingMock.context}
+            : stored?.context_text || upcomingMock.context}
         </div>
 
         {/* SCENARIO (upcoming only, after analysis) */}
