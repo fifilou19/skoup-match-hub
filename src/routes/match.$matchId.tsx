@@ -11,6 +11,8 @@ import {
   X,
 } from "lucide-react";
 import { TeamLogo } from "@/components/skoup/TeamLogo";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 type Status = "upcoming" | "finished";
 
@@ -125,27 +127,34 @@ const finishedMock = {
 
 // ---------- Helpers ----------
 
-const STORAGE_KEY = "skoup_analyzed_matches";
+const STORAGE_PREFIX = "analysis_";
 
-function isMatchAnalyzed(matchId: string): boolean {
+type StoredAnalysis = {
+  profile_label: string;
+  scenario_text: string;
+  context_text: string;
+  predictions: Array<{
+    event_name: string;
+    threshold: string;
+    event_type: string;
+    interval_text?: string | null;
+    reasoning: string;
+  }>;
+};
+
+function loadStoredAnalysis(matchId: string): StoredAnalysis | null {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return false;
-    const analyzed = JSON.parse(raw) as string[];
-    return analyzed.includes(matchId);
+    const raw = localStorage.getItem(STORAGE_PREFIX + matchId);
+    if (!raw) return null;
+    return JSON.parse(raw) as StoredAnalysis;
   } catch {
-    return false;
+    return null;
   }
 }
 
-function saveMatchAnalyzed(matchId: string) {
+function saveStoredAnalysis(matchId: string, data: StoredAnalysis) {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    const analyzed = raw ? (JSON.parse(raw) as string[]) : [];
-    if (!analyzed.includes(matchId)) {
-      analyzed.push(matchId);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(analyzed));
-    }
+    localStorage.setItem(STORAGE_PREFIX + matchId, JSON.stringify(data));
   } catch {
     // ignore
   }
@@ -206,9 +215,12 @@ function MatchDetail() {
   const data = isFinished ? finishedMock : upcomingMock;
 
   const [watched, setWatched] = useState(false);
-  const [analyzed, setAnalyzed] = useState(() => isMatchAnalyzed(matchId));
+  const [stored, setStored] = useState<StoredAnalysis | null>(() =>
+    loadStoredAnalysis(matchId)
+  );
   const [analyzing, setAnalyzing] = useState(false);
 
+  const analyzed = stored !== null;
   const showAnalysis = isFinished || analyzed;
 
   const handleBack = () => {
@@ -216,13 +228,40 @@ function MatchDetail() {
     else navigate({ to: "/" });
   };
 
-  const handleAnalyze = () => {
+  const handleAnalyze = async () => {
     setAnalyzing(true);
-    setTimeout(() => {
+    try {
+      const { data: res, error } = await supabase.functions.invoke(
+        "analyze-match",
+        { body: { match_id: matchId } }
+      );
+      if (error || !res?.success) {
+        throw new Error(error?.message || res?.error || "Analyse échouée");
+      }
+      const payload = res.data;
+      const predictions = (payload.predictions || []).map((p: any) => ({
+        event_name: p.event_name,
+        threshold: p.threshold,
+        event_type: p.event_type,
+        interval_text: p.interval_text,
+        reasoning: p.reasoning,
+      }));
+      const next: StoredAnalysis = {
+        profile_label: payload.profile_label,
+        scenario_text: payload.scenario_text,
+        context_text: payload.context_text,
+        predictions,
+      };
+      saveStoredAnalysis(matchId, next);
+      setStored(next);
+    } catch (e) {
+      console.error("analyze-match invoke failed", e);
+      toast.error(
+        "Analyse temporairement indisponible. Réessaie dans quelques instants."
+      );
+    } finally {
       setAnalyzing(false);
-      setAnalyzed(true);
-      saveMatchAnalyzed(matchId);
-    }, 3000);
+    }
   };
 
   const handleShare = () => {
@@ -425,7 +464,7 @@ function MatchDetail() {
         >
           {isFinished
             ? (data as typeof finishedMock).summary
-            : upcomingMock.context}
+            : stored?.context_text || upcomingMock.context}
         </div>
 
         {/* SCENARIO (upcoming only, after analysis) */}
@@ -452,7 +491,7 @@ function MatchDetail() {
                   display: "inline-block",
                 }}
               >
-                {upcomingMock.scenarioProfile}
+                {stored?.profile_label || upcomingMock.scenarioProfile}
               </span>
               <p
                 style={{
@@ -462,7 +501,7 @@ function MatchDetail() {
                   lineHeight: 1.6,
                 }}
               >
-                {upcomingMock.scenarioText}
+                {stored?.scenario_text || upcomingMock.scenarioText}
               </p>
             </div>
           </>
@@ -520,8 +559,17 @@ function MatchDetail() {
               ? (data as typeof finishedMock).predictions.map((p) => (
                   <FinishedPredictionCard key={p.name} pred={p} />
                 ))
-              : upcomingMock.predictions.map((p) => (
-                  <UpcomingPredictionCard key={p.name} pred={p} />
+              : (stored?.predictions || upcomingMock.predictions).map((p: any) => (
+                  <UpcomingPredictionCard
+                    key={p.event_name || p.name}
+                    pred={{
+                      name: p.event_name || p.name,
+                      threshold: p.threshold,
+                      type: p.event_type || p.type,
+                      interval: p.interval_text || p.interval,
+                      analysis: p.reasoning || p.analysis,
+                    }}
+                  />
                 ))}
           </>
         )}
