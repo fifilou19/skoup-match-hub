@@ -623,6 +623,8 @@ function MatchDetail() {
                   type: p.event_type,
                   interval: p.interval_text || undefined,
                   analysis: p.reasoning,
+                  probability:
+                    typeof p.probability === "number" ? p.probability : undefined,
                 }}
               />
             ))}
