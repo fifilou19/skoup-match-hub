@@ -538,8 +538,20 @@ Deno.serve(async (req) => {
       ).length || 0
     }
 
+    // Standings pour calcul d'enjeu
+    const standingsRes = await fetch(
+      `https://v3.football.api-sports.io/standings?league=${leagueId}&season=${season}`,
+      { headers: { 'x-rapidapi-key': apiKey!, 'x-rapidapi-host': 'v3.football.api-sports.io' } }
+    )
+    const standingsData = await standingsRes.json()
+    const standings = standingsData.response?.[0]?.league?.standings?.[0] || []
+    const totalTeams = standings.length || 20
+    const homeStanding = standings.find((s: any) => s.team.id === homeId)
+    const awayStanding = standings.find((s: any) => s.team.id === awayId)
+    const enjeu = calcEnjeu(homeStanding, awayStanding, totalTeams)
+
     const scoreAxe1 = calcAxe1(stats)
-    const scoreAxe2 = calcAxe2(stats, 0, 0)
+    const scoreAxe2 = calcAxe2(stats, enjeu, 0)
     const profile = getProfile(scoreAxe1, scoreAxe2)
 
     const coeffArbitre = 1.0
@@ -549,6 +561,37 @@ Deno.serve(async (req) => {
     const predictions = calcPredictions(
       eventCodes, stats, coeffArbitre, coeffEnjeu
     )
+
+    // Fallback : garantir au moins 2 prédictions
+    if (predictions.length < 2) {
+      const lambdaTotal = (stats.home.goals_avg || 1.3) + (stats.away.goals_avg || 1.0)
+      const probOver = poissonOver(lambdaTotal, 2)
+      const probA = 1 - poissonProb(stats.home.goals_avg || 1.3, 0)
+      const probB = 1 - poissonProb(stats.away.goals_avg || 1.0, 0)
+      const probBTTS = probA * probB
+
+      if (!predictions.find(p => p.event_code.includes('buts'))) {
+        predictions.push({
+          event_code: 'total_buts_over',
+          event_name: 'Total buts',
+          threshold: probOver >= 0.5 ? '+ 2.5 buts' : '- 2.5 buts',
+          event_type: 'binaire',
+          probability: probOver >= 0.5 ? probOver : 1 - probOver,
+          reasoning: `Lambda total : ${lambdaTotal.toFixed(2)} buts attendus pour ce match.`
+        })
+      }
+
+      if (!predictions.find(p => p.event_code === 'btts') && probBTTS >= 0.40) {
+        predictions.push({
+          event_code: 'btts',
+          event_name: 'Les deux équipes marquent',
+          threshold: probBTTS >= 0.5 ? 'Oui' : 'Non',
+          event_type: 'binaire',
+          probability: probBTTS >= 0.5 ? probBTTS : 1 - probBTTS,
+          reasoning: `Probabilité BTTS : ${(probBTTS * 100).toFixed(0)}% basée sur les moyennes offensives des deux équipes.`
+        })
+      }
+    }
 
     const profileLabels: Record<string, string> = {
       P1: 'Équilibré / Ouvert',
@@ -563,21 +606,39 @@ Tu rédiges des analyses courtes, claires et en français simple pour des parieu
 Maximum 3 phrases par section.
 Tu retournes UNIQUEMENT un JSON valide, aucun texte avant ou après.`
 
-    const userPrompt = `Analyse ce match de football et génère les textes suivants.
+    const userPrompt = `Analyse ce match précis et génère des textes spécifiques à ces deux équipes.
 
 Match : ${fixture.teams.home.name} vs ${fixture.teams.away.name}
-Compétition : ${fixture.league.name} - ${fixture.league.country}
-Profil calculé : ${profileLabels[profile]} (Axe1: ${scoreAxe1}/10, Axe2: ${scoreAxe2}/10)
-Stats domicile : ${JSON.stringify(stats.home)}
-Stats extérieur : ${JSON.stringify(stats.away)}
+Compétition : ${fixture.league.name} — ${fixture.league.country}
+Journée/Phase : ${fixture.league.round || 'Non précisé'}
+Profil calculé : ${profileLabels[profile]}
+Score Axe1 (rapport de force) : ${scoreAxe1}/10
+Score Axe2 (intensité) : ${scoreAxe2}/10
 
-Retourne ce JSON exact :
+Stats ${fixture.teams.home.name} :
+- Buts marqués/match : ${stats.home.goals_avg}
+- Corners/match : ${stats.home.corners_avg}
+- Classement : ${homeStanding ? homeStanding.rank + 'e sur ' + totalTeams : 'N/A'}
+- Points : ${homeStanding?.points || 'N/A'}
+
+Stats ${fixture.teams.away.name} :
+- Buts marqués/match : ${stats.away.goals_avg}
+- Corners/match : ${stats.away.corners_avg}
+- Classement : ${awayStanding ? awayStanding.rank + 'e sur ' + totalTeams : 'N/A'}
+- Points : ${awayStanding?.points || 'N/A'}
+
+Événements porteurs identifiés :
+${predictions.map(p => `- ${p.event_name} : ${p.threshold} (${(p.probability * 100).toFixed(0)}%)`).join('\n')}
+
+IMPORTANT : Cite les vrais noms des équipes dans chaque explication. Sois précis et spécifique. Maximum 3 phrases par section.
+
+Retourne UNIQUEMENT ce JSON valide :
 {
-  "context_text": "Présentation du contexte du match en 2-3 phrases (équipes, enjeux, absences notables). Temps présent/futur.",
+  "context_text": "contexte spécifique à ce match (2-3 phrases, présent/futur, cite les équipes par leur vrai nom)",
   "scenario_label": "${profileLabels[profile]}",
-  "scenario_text": "Description de la physionomie attendue du match en 2-3 phrases. Qu'est-ce qu'on attend comme type de match ?",
+  "scenario_text": "physionomie attendue du match (2-3 phrases, spécifique à ces équipes)",
   "predictions_reasoning": {
-    ${predictions.map(p => `"${p.event_code}": "Pour le match ${fixture.teams.home.name} vs ${fixture.teams.away.name} avec le profil ${profileLabels[profile]}, explique en 2 phrases pourquoi l'événement '${p.event_name} ${p.threshold}' est porteur pour CE match spécifiquement. Utilise les stats réelles : buts moyens domicile ${stats.home.goals_avg.toFixed(2)}, buts moyens extérieur ${stats.away.goals_avg.toFixed(2)}, corners domicile ${stats.home.corners_avg.toFixed(1)}, corners extérieur ${stats.away.corners_avg.toFixed(1)}."`).join(',\n    ')}
+    ${predictions.map(p => `"${p.event_code}": "explication 2 phrases pourquoi ${p.event_name} est porteur pour ${fixture.teams.home.name} vs ${fixture.teams.away.name} spécifiquement"`).join(',\n    ')}
   }
 }`
 
