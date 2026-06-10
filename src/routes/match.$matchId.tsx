@@ -10,7 +10,11 @@ import {
   Sparkles,
   Check,
   X,
+  TrendingUp,
+  TrendingDown,
+  Minus,
 } from "lucide-react";
+
 import { TeamLogo } from "@/components/skoup/TeamLogo";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
@@ -31,9 +35,14 @@ export const Route = createFileRoute("/match/$matchId")({
 const STORAGE_PREFIX = "analysis_";
 
 type StoredAnalysis = {
+  profile_code?: string;
   profile_label: string;
+  scenario_label?: string;
   scenario_text: string;
   context_text: string;
+  confidence?: "HAUTE" | "MOYENNE" | "BASSE" | string;
+  score_axe1?: number;
+  score_axe2?: number;
   predictions: Array<{
     event_name: string;
     threshold: string;
@@ -41,8 +50,10 @@ type StoredAnalysis = {
     interval_text?: string | null;
     reasoning: string;
     probability?: number | null;
+    display_order?: number;
   }>;
 };
+
 
 function loadStoredAnalysis(matchId: string): StoredAnalysis | null {
   try {
@@ -188,14 +199,80 @@ function MatchDetail() {
       setWatchLoading(false);
     }
   };
-  const [stored, setStored] = useState<StoredAnalysis | null>(() =>
-    loadStoredAnalysis(matchId)
-  );
+  const [stored, setStored] = useState<StoredAnalysis | null>(() => {
+    const local = loadStoredAnalysis(matchId);
+    if (
+      local &&
+      local.profile_code !== "PENDING" &&
+      local.predictions?.length > 0
+    ) {
+      return local;
+    }
+    return null;
+  });
   const [analyzing, setAnalyzing] = useState(false);
   const [contextText, setContextText] = useState<string | null>(
     stored?.context_text ?? null
   );
   const [contextLoading, setContextLoading] = useState(false);
+
+  // If no valid local analysis, try to recover one from Supabase
+  useEffect(() => {
+    if (stored) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data: remote } = await supabase
+          .from("analyses")
+          .select("*, predictions(*)")
+          .eq("match_id", matchId.toString())
+          .maybeSingle();
+        if (cancelled || !remote) return;
+        if (
+          remote.profile_code === "PENDING" ||
+          !remote.predictions ||
+          remote.predictions.length === 0
+        ) {
+          return;
+        }
+        const mapped: StoredAnalysis = {
+          profile_code: remote.profile_code,
+          profile_label: remote.profile_label,
+          score_axe1: remote.score_axe1,
+          score_axe2: remote.score_axe2,
+          confidence: remote.confidence,
+          context_text: remote.context_text,
+          scenario_label: remote.scenario_label,
+          scenario_text: remote.scenario_text,
+          predictions: (remote.predictions as any[])
+            .map((p) => ({
+              event_name: p.event_name,
+              threshold: p.threshold,
+              event_type: p.event_type,
+              interval_text: p.interval_text,
+              reasoning: p.reasoning,
+              probability:
+                typeof p.probability === "number" ? p.probability : null,
+              display_order: p.display_order,
+            }))
+            .sort(
+              (a, b) => (a.display_order ?? 0) - (b.display_order ?? 0)
+            ),
+        };
+        saveStoredAnalysis(matchId, mapped);
+        if (!cancelled) {
+          setStored(mapped);
+          if (mapped.context_text) setContextText(mapped.context_text);
+        }
+      } catch (e) {
+        console.log("Analyse non trouvée en base:", e);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [matchId, stored]);
+
 
   // Auto-generate context once the match is loaded (upcoming only)
   useEffect(() => {
@@ -260,11 +337,17 @@ function MatchDetail() {
         probability: typeof p.probability === "number" ? p.probability : null,
       }));
       const next: StoredAnalysis = {
+        profile_code: payload.profile_code,
         profile_label: payload.profile_label,
+        scenario_label: payload.scenario_label,
         scenario_text: payload.scenario_text,
         context_text: payload.context_text || contextText || "",
+        confidence: payload.confidence,
+        score_axe1: payload.score_axe1,
+        score_axe2: payload.score_axe2,
         predictions,
       };
+
       saveStoredAnalysis(matchId, next);
       setStored(next);
       if (payload.context_text) setContextText(payload.context_text);
@@ -552,6 +635,13 @@ function MatchDetail() {
               >
                 {stored.profile_label}
               </span>
+              {stored.confidence && (
+                <div style={{ marginTop: 8 }}>
+                  <ConfidenceBadge value={stored.confidence} />
+                </div>
+              )}
+
+
               <p
                 style={{
                   marginTop: 10,
@@ -665,6 +755,37 @@ function MatchDetail() {
     </div>
   );
 }
+
+function ConfidenceBadge({ value }: { value: string }) {
+  const v = value.toUpperCase();
+  const config =
+    v === "HAUTE"
+      ? { bg: "#0F2E1A", border: "#22C55E", color: "#22C55E", label: "Confiance haute", Icon: TrendingUp }
+      : v === "BASSE"
+      ? { bg: "#2D1F0A", border: "#854F0B", color: "#854F0B", label: "Confiance basse", Icon: TrendingDown }
+      : { bg: "#1E293B", border: "#E8622A", color: "#E8622A", label: "Confiance moyenne", Icon: Minus };
+  const { Icon } = config;
+  return (
+    <div
+      style={{
+        marginTop: 8,
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 6,
+        backgroundColor: config.bg,
+        border: `0.5px solid ${config.border}`,
+        borderRadius: 6,
+        padding: "4px 10px",
+      }}
+    >
+      <Icon size={12} color={config.color} />
+      <span style={{ fontSize: 11, color: config.color, fontWeight: 500 }}>
+        {config.label}
+      </span>
+    </div>
+  );
+}
+
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
