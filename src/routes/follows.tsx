@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Bookmark, Eye, Lock } from "lucide-react";
+import { Bookmark, Lock, X } from "lucide-react";
 import { BottomNav } from "@/components/skoup/BottomNav";
 import { TeamLogo } from "@/components/skoup/TeamLogo";
 import { Skeleton } from "@/components/ui/skeleton";
