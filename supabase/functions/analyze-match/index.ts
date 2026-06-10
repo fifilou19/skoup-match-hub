@@ -430,7 +430,11 @@ Deno.serve(async (req) => {
       .eq('match_id', match_id)
       .maybeSingle()
 
-    if (existing) {
+    // Ne retourner le cache QUE si l'analyse est complète
+    if (existing &&
+        existing.profile_code !== 'PENDING' &&
+        existing.predictions &&
+        existing.predictions.length > 0) {
       return new Response(
         JSON.stringify({ success: true, cached: true, data: existing }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
