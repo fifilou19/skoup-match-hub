@@ -121,15 +121,17 @@ function SettingsPage() {
             }}
           >
             <span className="font-display font-bold text-white" style={{ fontSize: 18 }}>
-              KM
+              {initials}
             </span>
           </div>
           <div className="ml-3 flex flex-1 flex-col min-w-0">
             <span className="truncate" style={{ fontSize: 14, color: "#FFFFFF", fontWeight: 500 }}>
-              Kofi Mensah
+              {username || (isAuthed ? "Utilisateur" : "Invité")}
             </span>
-            <span className="truncate" style={{ fontSize: 12, color: "#64748B" }}>kofi.mensah@gmail.com</span>
-            <span className="truncate" style={{ fontSize: 11, color: "#475569" }}>🇨🇮 Côte d'Ivoire</span>
+            <span className="truncate" style={{ fontSize: 12, color: "#64748B" }}>{email || "—"}</span>
+            {country && (
+              <span className="truncate" style={{ fontSize: 11, color: "#475569" }}>{country}</span>
+            )}
           </div>
           <ChevronRight size={16} color="#475569" className="ml-2 shrink-0" />
         </button>
