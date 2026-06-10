@@ -1,0 +1,1 @@
+DELETE FROM public.daily_quota WHERE quota_date = CURRENT_DATE;
