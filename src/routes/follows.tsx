@@ -358,8 +358,10 @@ function FollowsPage() {
     return () => clearInterval(interval);
   }, [items, userId]);
 
-
+  const handleRemove = async (id: string) => {
+    const target = items.find((it) => it.id === id);
     setItems((arr) => arr.filter((it) => it.id !== id));
+
     const { error } = await supabase.from("watchlist").delete().eq("id", id);
     if (error) {
       console.error("watchlist delete failed", error);
