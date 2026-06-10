@@ -4,13 +4,55 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
+  useNavigate,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { Toaster } from "sonner";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { supabase } from "@/integrations/supabase/client";
+
+const PUBLIC_ROUTES = ["/login", "/signup"];
+
+function AuthGate() {
+  const navigate = useNavigate();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const [checked, setChecked] = useState(false);
+  const [hasSession, setHasSession] = useState<boolean>(false);
+
+  useEffect(() => {
+    let mounted = true;
+    supabase.auth.getSession().then(({ data }) => {
+      if (!mounted) return;
+      setHasSession(!!data.session);
+      setChecked(true);
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      setHasSession(!!session);
+      setChecked(true);
+    });
+    return () => {
+      mounted = false;
+      sub.subscription.unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!checked) return;
+    const isPublic = PUBLIC_ROUTES.includes(pathname);
+    if (!hasSession && !isPublic) {
+      navigate({ to: "/login", replace: true });
+    } else if (hasSession && isPublic) {
+      navigate({ to: "/", replace: true });
+    }
+  }, [checked, hasSession, pathname, navigate]);
+
+  return null;
+}
 
 function NotFoundComponent() {
   return (
@@ -124,8 +166,10 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <AuthGate />
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
+      <Toaster theme="dark" position="top-center" />
     </QueryClientProvider>
   );
 }
